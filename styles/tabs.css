@@ -1,0 +1,88 @@
+@font-face {
+    font-family: "Nunito";
+    src: url("../fonts/Nunito-VariableFont_wght.ttf");
+}
+
+* {
+    font-family: "Nunito";
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+}
+
+body {
+    background-color: rgb(230, 230, 230);
+    overflow: hidden;
+}
+
+.tabs {
+    width: 15vw;
+    float: left;
+    height: 100vh;
+    background-color: rgb(230, 230, 230);
+    
+}
+
+.tabs button {
+    background-color: rgba(255, 255, 255, 0);
+    border: none;
+    width: calc(100% - 6px);
+    outline: none;
+    cursor: pointer;
+    padding: 8px 16px;
+    text-align: left;
+    border-radius: 10px;
+    margin: 5px;
+    margin-left: 10px;
+    margin-bottom: 0;
+    transition: 0.2s;
+
+}
+
+#add-order-tablink {
+    margin-bottom: 10px;
+}
+
+.menu-label {
+    font-size: 0.9em;
+    padding: 4px;
+    font-weight: bold;
+}
+
+.tabs button:hover {
+    background-color: rgba(255, 255, 255, 0.849);
+    transition: 0.2s;
+    
+}
+
+.tabs button.active {
+    background-color: rgba(255, 255, 255, 1);
+    box-shadow: 2px 2px 8px 1px rgba(128, 128, 128, 0.678);
+  
+
+}
+
+.tab-content{
+    width: calc(85vw - 10px);
+    overflow: auto;
+    float: right;
+    display: none;
+    height: 100vh;
+    background-color: white;
+    border-bottom-left-radius: 20px;
+    border-top-left-radius: 20px;
+    box-shadow: 5px 5px 10px 5px rgba(128, 128, 128, 0.658);
+    animation: fadeEffect 0.2s;
+    padding-top: 15px;
+    padding-left: 20px;
+}
+
+@keyframes fadeEffect {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+
+
+
+
+

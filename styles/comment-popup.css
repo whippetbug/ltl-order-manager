@@ -1,0 +1,24 @@
+.comments-container {
+    position: relative;
+}
+
+.comments-popup {
+    position: absolute;
+    width: 300px;
+    right: -20px;
+    padding: 20px;
+    border-radius: 7px;
+    box-shadow: 3px 3px 10px 2px rgba(194, 194, 194, 0.514);
+    z-index: 1;
+    background-color: white;
+    display: none;
+    animation: fadeEffect 0.3s;
+}
+
+.comments-container:hover .comments-popup {
+    display: block;
+}
+
+.comments-label {
+    text-decoration: underline;
+}

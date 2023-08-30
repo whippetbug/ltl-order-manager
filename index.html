@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="./scripts/tabs.js"></script>
+    <link rel="stylesheet" href="./styles/tabs.css">
+    <link rel="stylesheet" href="./styles/tab-content.css">
+    <link rel="stylesheet" href="./styles/gg-trash.css">
+    <link rel="stylesheet" href="./styles/popup.css">
+    <link rel="stylesheet" href="./styles/comment-popup.css">
+    <link rel="stylesheet" href="./styles/edit-order.css">
+    <title>Love That Loaf Orders</title>
+</head>
+<body>
+    <div class="tabs">
+        <label id="menu-label" class="menu-label">Menu</label>
+        <button class="tablink" id="view-orders-tablink" onclick="openTab(event, 'view-orders')">View Orders</button>
+        <button class="tablink" id="add-order-tablink" onclick="openTab(event, 'add-order')">Add Order</button>
+        <label id="settings-label" class="menu-label">Settings</label>
+        <button class="tablink" id="add-bread-tablink" onclick="openTab(event, 'add-bread')">Add Bread</button>
+    </div>
+    <div class="tab-content" id="view-orders">
+        <h3 class="underlined">View Orders</h3>
+        <label class="input-box-label" id="date-search-label">Search by date</label>
+        <input type="date" id="date-search" class="input-box">
+        <button type="submit" class="button" id="search-orders-button">Search</button>
+        <div id="table-container"></div>
+        <div class="popup" id="order-edit-popup">
+            <div class="container-for-vertical-centering">
+                <div class="popup-background">
+                    <div class="container-for-vertical-centering">
+                        <div class="popup-elements flex-container">
+                            <div class="container-left">
+                                <h3 class="underlined">Edit Order</h3>
+                                <label for="order-name-updated" class="input-box-label">Order Name</label>
+                                <input type="text" class="input-box" id="order-name-updated">
+                                <label for="order-date-updated" class="input-box-label">Order Date</label>
+                                <input type="date" class="input-box" id="order-date-updated">
+                                <label for="order-comments-updated" class="input-box-label">Comments</label>
+                                <textarea id="order-comments-updated" class="textarea input-box" cols="30" rows="4"></textarea>
+                                <label for="paid-updated">Paid</label>
+                                <input type="checkbox" id="paid-updated">
+                            </div>
+                            <div class="container-right">
+                                <div id="bread-types-qty-updated"></div>
+                                <button class="delete-button" id="delete-order-button">Delete</button>
+                                <button class="cancel-button" id="cancel-order-edit">Cancel</button>
+                                <button class="save-button button" id="save-order-edit-button">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="tab-content" id="add-order">
+        <div class="flex-container">
+            <div id="add-order-container-left">
+                <h3 class="underlined">Add Order</h3>
+                <label class="input-box-label" id="input-box-label-order-name">Order Name</label>
+                <input type="text" id="order-name" required="required" class="input-box">
+                <label class="input-box-label" id="input-box-label-order-date">Order Date</label>
+                <input type="date" id="order-date" class="input-box">
+                <label class="input-box-label">Comments</label>
+                <textarea name="order-comments" id="order-comments" class="textarea input-box" cols="30" rows="4"></textarea>
+                <div class="checkbox-container"> 
+                    <label for="paid-checkbox" class="checkbox-label">Paid</label>
+                    <input type="checkbox" class="checkbox" id="paid-checkbox">
+                </div>
+                <div class="checkbox-container" id="standing-order-checkbox-container"> 
+                    <label for="standing-order-checkbox" class="checkbox-label">Standing order</label>
+                    <input type="checkbox" class="checkbox" id="standing-order-checkbox">
+                </div>
+                <div id="standing-order-fields">
+                    <label class="input-box-label" id="order-repetition-label" >How often order repeats</label>
+                    <input type="number" class="input-box" id="standing-order-repetition" placeholder="Days">
+                </div>
+                <button id="add-order-save-btn" class="button" onclick="addOrder()">Add Order</button>
+            </div>
+            <div id="add-order-container-right">
+                <ul id="bread-types-qty-input"></ul>
+            </div>   
+        </div>    
+    </div>
+    <div class="tab-content" id="add-bread">
+        <h3 class="underlined">Add Bread Type</h3>
+        <label id="bread-name-label" class="input-box-label">Bread Name</label>
+        <input type="text" id="bread-type-name" class="input-box">
+        <label class="input-box-label">Trade Price</label>
+        <div class="currency-wrap">
+            <span class="currency-sign">£</span>
+            <input type="number" id="bread-type-trade-price" step="any" class="input-box">
+        </div>
+        <label class="input-box-label">Retail Price</label>
+        <div class="currency-wrap">
+            <span class="currency-sign">£</span>
+            <input type="number" id="bread-type-retail-price" step="any" class="input-box">
+        </div>
+        <button type="button" id="bread-type-save-btn" class="button">Save</button>
+
+        <h3 class="underlined saved-bread-list-title">Currently saved bread types</h3>
+        <ul id="bread-types-list"></ul>
+        <div class="popup" id="popup">
+            <div class="container-for-vertical-centering">
+                <div class="popup-background">
+                    <div class="container-for-vertical-centering">
+                        <div class="popup-elements">
+                            <h3 class="underlined">Edit Bread Type</h3>
+                            <label for="bread-name-updated" class="input-box-label">Name</label>
+                            <input type="text" class="input-box" id="bread-name-updated">
+                            <label for="bread-trade-price-updated" class="input-box-label">Trade Price</label>
+                            <div class="currency-wrap">
+                                <span class="currency-sign popup-currency-sign">£</span>
+                                <input type="number" id="bread-trade-price-updated" class="input-box" step="any">
+                            </div>
+                            <label for="bread-retail-price-updated" class="input-box-label">Retail Price</label>
+                            <div class="currency-wrap">
+                                <span class="currency-sign popup-currency-sign">£</span>
+                                <input type="number" id="bread-retail-price-updated" class="input-box" step="any">
+                            </div>
+                            <button type="button" class="delete-button" id="delete-bread-type-button">Delete</button>
+                            <button type="button" class="cancel-button" id="cancel-bread-edit">Cancel</button>
+                            <button type="button" class="button save-button" id="popup-save-button">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="./scripts/renderer.js"></script>
+</body>
+</html>
