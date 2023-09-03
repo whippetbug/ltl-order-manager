@@ -134,6 +134,8 @@ async function handleSearchOrders (event, date) {
                 breadTypesQty.splice(j, 0, { 
                     name: breadTypesQtyFetched[j].name, 
                     quantity: breadTypesQtyFetched[j].quantity,
+                    tradePrice: breadTypesQtyFetched[j].tradePrice,
+                    retailPrice: breadTypesQtyFetched[j].retailPrice,
                 });
             }
 
@@ -167,12 +169,34 @@ async function handleUpdateBreadType(event, updatedBreadTypeValues) {
     fetchBreadTypes();
 }
 
+async function handleSaveEditedOrder (event, valuesForSave) {
+    console.log(valuesForSave);
+    await order.updateOne(
+        { 
+            $and: [{orderDate: valuesForSave.originalDate}, 
+                { orderName: valuesForSave.originalName}]
+        },
+        {
+            $set: {
+                orderName: valuesForSave.orderName, 
+                orderDate: valuesForSave.orderDate, 
+                orderComments: valuesForSave.orderComments,
+                breadTypesQty: valuesForSave.breadTypesQty,
+                paid: valuesForSave.paid,
+
+            }
+        } )
+
+    win.webContents.send("update-order-search-results")
+}
+
 app.whenReady().then(() => {
     ipcMain.on("save-bread-type", handleSaveBreadType);
     ipcMain.on("delete-bread-type", handleDeleteBreadType);
     ipcMain.on("add-order", handleAddOrder);
     ipcMain.on("search-orders", handleSearchOrders);
     ipcMain.on("update-bread-type", handleUpdateBreadType);
+    ipcMain.on("save-edited-order", handleSaveEditedOrder);
     createWindow();
 
     app.on("activate", () => {

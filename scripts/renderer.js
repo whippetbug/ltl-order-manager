@@ -17,8 +17,13 @@ const popupSaveButton = document.getElementById("popup-save-button");
 const breadNameUpdated = document.getElementById("bread-name-updated");
 const breadTradePriceUpdated = document.getElementById("bread-trade-price-updated");
 const breadRetailPriceUpdated = document.getElementById("bread-retail-price-updated");
-const breadTypesQtyUpdated = document.getElementById("bread-types-qty-updated")
-const orderEditPopup = document.getElementById("order-edit-popup")
+const breadTypesQtyUpdated = document.getElementById("bread-types-qty-updated");
+const orderEditPopup = document.getElementById("order-edit-popup");
+const orderNameUpdated = document.getElementById("order-name-updated");
+const orderDateUpdated = document.getElementById("order-date-updated");
+const paidUpdated = document.getElementById("paid-updated");
+const orderCommentsUpdated = document.getElementById("order-comments-updated");
+
 var breadTypesQty = [];
 var breadTypes, breadTypeQtyListItemsFetched, orderDateFromSearch, paid, standingOrder,
 breadTypeForEdit;
@@ -389,7 +394,13 @@ standingOrderCheckBox.addEventListener("change", () => {
 
 // Function for opening edit order popup
 function editOrder(orderValues) {
+    console.log(orderValues)
     orderEditPopup.classList.add("show-popup");
+    //removes input box container if it already exists
+    const breadTypeQtyInputBoxUpdatedContainerFromHtml = document.getElementById("bread-type-qty-input-updated-container")
+    if (breadTypeQtyInputBoxUpdatedContainerFromHtml != undefined) {
+        breadTypeQtyInputBoxUpdatedContainerFromHtml.remove()
+        }
     // creates temporary cotainer for input boxes that is removed when the popup is closed
     const breadTypeQtyInputBoxUpdatedContainer = document.createElement("div")
     breadTypeQtyInputBoxUpdatedContainer.id = "bread-type-qty-input-updated-container"
@@ -412,19 +423,70 @@ function editOrder(orderValues) {
     }
 
     //sets values to input fields 
-    document.getElementById("order-name-updated").value = orderValues.orderName;
-    document.getElementById("order-date-updated").valueAsDate = orderValues.orderDate;
-    document.getElementById("order-comments-updated").value = orderValues.orderComments;
-    document.getElementById("paid-updated").checked = orderValues.paid;
+    orderNameUpdated.value = orderValues.orderName;
+    orderDateUpdated.valueAsDate = orderValues.orderDate;
+    orderCommentsUpdated.value = orderValues.orderComments;
+    paidUpdated.checked = orderValues.paid;
+
+    
+    // Adds onclick event to save button for order edit
+    document.getElementById("save-order-edit-button").onclick = () => {saveOrderEdit(orderValues)};
 
     // adds click listner to cancel and delete order buttons 
-    document.getElementById("cancel-order-edit").onclick = () => {cancelOrderEdit()}
+    document.getElementById("cancel-order-edit").onclick = () => {cancelOrderEdit()};
 
 }
 
 // Function for cancelling order edit 
 function cancelOrderEdit() {
-    orderEditPopup.classList.remove("show-popup")
-    document.getElementById("bread-type-qty-input-updated-container").remove()
+    orderEditPopup.classList.remove("show-popup");
+    document.getElementById("bread-type-qty-input-updated-container").remove();
 }
 
+// Saves changes made to order
+function saveOrderEdit(orderValues) {
+    //builds order values for saving 
+    const originalName = orderValues.orderName;
+    const originalDate = orderValues.orderDate;
+    const editedOrderDate = orderDateUpdated.value;
+    const editedOrderName = orderNameUpdated.value;
+    const editedPaid = paidUpdated.checked;
+    const editedComments = orderCommentsUpdated.value; 
+    let editedBreadTypesQty = [];
+
+    for ( let i = 0; i < orderValues.breadTypesQty.length; i++) {
+        const editedQuantity = document.getElementById(`${orderValues.breadTypesQty[i].name}-input-box-updated`).value;
+        const editedName = orderValues.breadTypesQty[i].name;
+        const retailPrice = orderValues.breadTypesQty[i].retailPrice;
+        const tradePrice = orderValues.breadTypesQty[i].tradePrice;
+
+        editedBreadTypesQty.push({
+            name: editedName,
+            quantity: editedQuantity,
+            retailPrice: retailPrice,
+            tradePrice: tradePrice,
+        });
+    }
+
+    //builds object for saving
+    const orderValuesForSave = {
+        orderName: editedOrderName,
+        orderDate: editedOrderDate,
+        paid: editedPaid,
+        orderComments: editedComments,
+        breadTypesQty: editedBreadTypesQty,
+        originalDate: originalDate,
+        originalName: originalName,
+    }
+
+    window.electronAPI.editOrder(orderValuesForSave);
+    orderEditPopup.classList.remove("show-popup");
+    searchOrders(document.getElementById("date-search").value);
+
+}
+
+//updates order search results when databse is updated 
+window.electronAPI.updateOrderSearchResults((event) => {
+    searchOrders(document.getElementById("date-search").value)
+
+})
