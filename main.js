@@ -156,38 +156,56 @@ async function handleSearchOrders (event, date) {
 
 // Updates bread type in database when bread type is edited 
 async function handleUpdateBreadType(event, updatedBreadTypeValues) {
-    await breadTypes.updateOne({
-        name: updatedBreadTypeValues.originalName
-    },
-    { $set: 
-        {
-            name: updatedBreadTypeValues.name,
-            tradePrice: updatedBreadTypeValues.tradePrice,
-            retailPrice: updatedBreadTypeValues.retailPrice,
-        }
-    });
-    fetchBreadTypes();
+    try {
+        await breadTypes.updateOne({
+            name: updatedBreadTypeValues.originalName
+        },
+        { $set: 
+            {
+                name: updatedBreadTypeValues.name,
+                tradePrice: updatedBreadTypeValues.tradePrice,
+                retailPrice: updatedBreadTypeValues.retailPrice,
+            }
+        });
+        fetchBreadTypes();
+    } catch (error) {
+        console.log(error);
+    }
 }
 
+//Saves order to orders database
 async function handleSaveEditedOrder (event, valuesForSave) {
-    console.log(valuesForSave);
-    await order.updateOne(
-        { 
-            $and: [{orderDate: valuesForSave.originalDate}, 
-                { orderName: valuesForSave.originalName}]
-        },
-        {
-            $set: {
-                orderName: valuesForSave.orderName, 
-                orderDate: valuesForSave.orderDate, 
-                orderComments: valuesForSave.orderComments,
-                breadTypesQty: valuesForSave.breadTypesQty,
-                paid: valuesForSave.paid,
+    try {
+        await order.updateOne(
+            { 
+                $and: [{orderDate: valuesForSave.originalDate}, 
+                    { orderName: valuesForSave.originalName}]
+            },
+            {
+                $set: {
+                    orderName: valuesForSave.orderName, 
+                    orderDate: valuesForSave.orderDate, 
+                    orderComments: valuesForSave.orderComments,
+                    breadTypesQty: valuesForSave.breadTypesQty,
+                    paid: valuesForSave.paid,
+    
+                }
+            } )
+    
+        win.webContents.send("update-order-search-results");
+    } catch (error) {
+        console.log(error);
+    }
+}
 
-            }
-        } )
-
-    win.webContents.send("update-order-search-results")
+// Deletes specified order in database
+async function handleDeleteOrder(orderValues) {
+    try {
+        await order.deleteOne({$and: [{ orderName: orderValues.orderName }, {orderDate: orderValues.orderDate }]});
+        win.webContents.send("update-order-search-results");
+    } catch (error) {
+        console.log(error);
+    }
 }
 
 app.whenReady().then(() => {
@@ -197,6 +215,7 @@ app.whenReady().then(() => {
     ipcMain.on("search-orders", handleSearchOrders);
     ipcMain.on("update-bread-type", handleUpdateBreadType);
     ipcMain.on("save-edited-order", handleSaveEditedOrder);
+    ipcMain.on("delete-order", handleDeleteOrder);
     createWindow();
 
     app.on("activate", () => {

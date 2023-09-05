@@ -487,6 +487,16 @@ function saveOrderEdit(orderValues) {
 
 //updates order search results when databse is updated 
 window.electronAPI.updateOrderSearchResults((event) => {
-    searchOrders(document.getElementById("date-search").value)
+    searchOrders(document.getElementById("date-search").value);
 
 })
+
+// Shows popup to make sure that you want to delete the order 
+function showDeleteOrderPopup() {
+    
+}
+
+// deletes the selected order
+function deleteOrder(orderValues) {
+    window.electronAPI.deleteOrder(orderValues);
+}
