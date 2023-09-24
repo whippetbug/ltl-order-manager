@@ -28,6 +28,14 @@
 .input-box[type=date]:focus {
     width: 122px;
 }
+
+#date-search {
+    display:inline;
+    position: relative;
+}
+
+
+
 .input-box:focus {
     outline: none;
     border: 3px solid rgb(176, 217, 255);
@@ -178,4 +186,16 @@
 
 #add-order-save-btn {
     margin-top: 10px;
+}
+
+
+#refresh-orders-button {
+    font-size: 1.2em;
+    padding:5px;
+    width: 40px;
+    height: 40px;
+    margin-left: 3px;
+    margin-bottom: 0px;
+    position: absolute;
+   
 }

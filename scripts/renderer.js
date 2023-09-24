@@ -1,7 +1,5 @@
-
-
 const saveBreadTypeButton = document.getElementById("bread-type-save-btn");
-const searchOrdersButton = document.getElementById("search-orders-button");
+const refreshOrdersButton = document.getElementById("refresh-orders-button");
 const dateSearch = document.getElementById("date-search");
 const tableContainer = document.getElementById("table-container");
 const standingOrderCheckBox = document.getElementById("standing-order-checkbox");
@@ -23,6 +21,7 @@ const orderNameUpdated = document.getElementById("order-name-updated");
 const orderDateUpdated = document.getElementById("order-date-updated");
 const paidUpdated = document.getElementById("paid-updated");
 const orderCommentsUpdated = document.getElementById("order-comments-updated");
+const deleteOrderButton = document.getElementById("delete-order-button");
 
 var breadTypesQty = [];
 var breadTypes, breadTypeQtyListItemsFetched, orderDateFromSearch, paid, standingOrder,
@@ -55,7 +54,7 @@ saveBreadTypeButton.addEventListener( "click", () => {
 })
 
 //Updates the bread list when it is recieved
-window.electronAPI.updateBreadList( async ( event, fetchedBreadTypes ) => {
+window.electronAPI.updateBreadList(( event, fetchedBreadTypes ) => {
     
     updateBreadList(fetchedBreadTypes);
 
@@ -252,15 +251,15 @@ window.electronAPI.addOrderSatus((event,status) => {
     }
 })
 
+// Searches the database when a date is selected
+dateSearch.addEventListener("input", () => {
+    searchOrders(document.getElementById("date-search").value)
+})
+
 //Adds click listener to search orders button
-searchOrdersButton.addEventListener("click", () => {
-    if (dateSearch.value == "" || dateSearch.value === undefined){
-        document.getElementById("date-search-label").innerText = "Enter a date";
-        document.getElementById("date-search-label").style.color = "red";
-    }else {
+refreshOrdersButton.addEventListener("click", () => {
+    if (dateSearch.value !== "" || dateSearch.value === undefined){
         searchOrders(document.getElementById("date-search").value)
-        document.getElementById("date-search-label").innerText = "Search by date";
-        document.getElementById("date-search-label").style.color = "black";
     }
     }
 )
@@ -394,7 +393,6 @@ standingOrderCheckBox.addEventListener("change", () => {
 
 // Function for opening edit order popup
 function editOrder(orderValues) {
-    console.log(orderValues)
     orderEditPopup.classList.add("show-popup");
     //removes input box container if it already exists
     const breadTypeQtyInputBoxUpdatedContainerFromHtml = document.getElementById("bread-type-qty-input-updated-container")
@@ -434,6 +432,7 @@ function editOrder(orderValues) {
 
     // adds click listner to cancel and delete order buttons 
     document.getElementById("cancel-order-edit").onclick = () => {cancelOrderEdit()};
+    deleteOrderButton.onclick = () => {confirmDeleteOrder(orderValues)}
 
 }
 
@@ -492,11 +491,17 @@ window.electronAPI.updateOrderSearchResults((event) => {
 })
 
 // Shows popup to make sure that you want to delete the order 
-function showDeleteOrderPopup() {
-    
+function confirmDeleteOrder(orderValues) {
+    if (confirm("Are you sure you want to delete this order?") == true){
+        deleteOrder(orderValues);
+        cancelOrderEdit();
+        searchOrders(document.getElementById("date-search").value);
+    }
+        
 }
 
 // deletes the selected order
 function deleteOrder(orderValues) {
     window.electronAPI.deleteOrder(orderValues);
 }
+

@@ -199,10 +199,11 @@ async function handleSaveEditedOrder (event, valuesForSave) {
 }
 
 // Deletes specified order in database
-async function handleDeleteOrder(orderValues) {
+async function handleDeleteOrder(event, orderValues) {
     try {
         await order.deleteOne({$and: [{ orderName: orderValues.orderName }, {orderDate: orderValues.orderDate }]});
         win.webContents.send("update-order-search-results");
+
     } catch (error) {
         console.log(error);
     }
