@@ -15,19 +15,43 @@
 
     <div class="tabs">
         <label id="menu-label" class="menu-label">Menu</label>
+        <button class="tablink" id="dashboard-tablink" onclick="openTab(event, 'dashboard')">Dashboard</button>
         <button class="tablink" id="view-orders-tablink" onclick="openTab(event, 'view-orders')">View Orders</button>
         <button class="tablink" id="add-order-tablink" onclick="openTab(event, 'add-order')">Add Order</button>
         <label id="settings-label" class="menu-label">Settings</label>
         <button class="tablink" id="add-bread-tablink" onclick="openTab(event, 'add-bread')">Add Bread</button>
     </div>
 
-    <div class="tab-content" id="view-orders">
-        <h3 class="underlined">View Orders</h3>
-        <label class="input-box-label" id="date-search-label">Search by date</label>
-        <div>
-            <input type="date" id="date-search" class="input-box">   
-            <button type="submit" class="button" id="refresh-orders-button">↻</button>
+    <div class="tab-content flex-container" id="dashboard">
+        <div id="unpaid-orders-list">
+            <h3 class="underlined">Unpaid Orders</h3>
         </div>
+    </div>
+
+    <div class="tab-content display-inline" id="view-orders">
+        <h3 class="underlined">View Orders</h3>
+    
+        <div>
+            <label class="input-box-label" id="date-search-label">Search by date</label>
+            <input type="date" id="date-search" class="input-box">
+        </div>
+        <div class="flex-container" id="name-search-fields-container">
+            <div>
+                <label class="input-box-label">Search by name</label>
+                <input type="text" placeholder="Name" id="name-search" class="input-box">
+            </div>
+            <div>
+                <label class="input-box-label">From</label>
+                <input type="date" id="name-search-start-date" class="input-box">
+            </div>
+            <div id="last-search-field">
+                <label class="input-box-label">To</label>
+                <input type="date" id="date-search-end-date" class="input-box"> 
+            </div>
+           <button type="button" class="button" id="search-orders-button">Search</button>
+
+        </div>
+
         <div id="table-container"></div>
         <div class="popup" id="order-edit-popup">
             <div class="container-for-vertical-centering">

@@ -1,5 +1,5 @@
 const saveBreadTypeButton = document.getElementById("bread-type-save-btn");
-const refreshOrdersButton = document.getElementById("refresh-orders-button");
+const searchOrdersButton = document.getElementById("search-orders-button");
 const dateSearch = document.getElementById("date-search");
 const tableContainer = document.getElementById("table-container");
 const standingOrderCheckBox = document.getElementById("standing-order-checkbox");
@@ -22,11 +22,30 @@ const orderDateUpdated = document.getElementById("order-date-updated");
 const paidUpdated = document.getElementById("paid-updated");
 const orderCommentsUpdated = document.getElementById("order-comments-updated");
 const deleteOrderButton = document.getElementById("delete-order-button");
+const unpaidOrdersTableContainer = document.getElementById("unpaid-orders-list");
+const nameSearch = document.getElementById("")
 
 var breadTypesQty = [];
 var breadTypes, breadTypeQtyListItemsFetched, orderDateFromSearch, paid, standingOrder,
 breadTypeForEdit;
 var breadTypesQtyItems = [];
+
+// converts date to format dd/mm/yyyy
+function formatDate(dateValue) { 
+    let date = new Date(dateValue);
+    const year = date.getFullYear();
+    let month = date.getMonth() + 1;
+    let day = date.getDate();
+    if (month < 10 ){
+        month = "0" + month;
+    }
+    if (day < 10 ){
+        day = "0" + day;
+    }
+    const formatedDate = `${day}/${month}/${year}`;
+    return formatedDate;
+}
+
 
 saveBreadTypeButton.addEventListener( "click", () => {
     const breadTypeName = document.getElementById("bread-type-name");
@@ -130,8 +149,8 @@ function editBreadType(breadType) {
     document.getElementById("bread-name-updated").value = breadType.name;
     document.getElementById("bread-retail-price-updated").value = (breadType.retailPrice / 100).toFixed(2);
     document.getElementById("bread-trade-price-updated").value = (breadType.tradePrice / 100).toFixed(2);
-    deleteBreadTypeButton.onclick = () => {deleteBreadType(breadType.name)};
-    popupSaveButton.onclick = () => {updateBreadType(breadType.name)};
+    deleteBreadTypeButton.onclick = () => {deleteBreadType(breadType.id)};
+    popupSaveButton.onclick = () => {updateBreadType(breadType.id)};
     
 }
 
@@ -142,18 +161,18 @@ function cancelBreadEdit () {
 }
 
 //Deletes bread type 
-function deleteBreadType(breadType){
-    window.electronAPI.deleteBreadType(breadType);
+function deleteBreadType(breadTypeId){
+    window.electronAPI.deleteBreadType(breadTypeId);
     popup.classList.remove("show-popup");
 }
 
 //Saves changes to the bread type
-function updateBreadType(breadTypeName) {
+function updateBreadType(breadTypeId) {
     const name = breadNameUpdated.value;
     const tradePrice = breadTradePriceUpdated.value * 100;
     const retailPrice = breadRetailPriceUpdated.value * 100;
     const updatedBreadTypeValues = { 
-        originalName: breadTypeName, 
+        id: breadTypeId,
         name: name, 
         tradePrice: tradePrice, 
         retailPrice: retailPrice,
@@ -251,15 +270,10 @@ window.electronAPI.addOrderSatus((event,status) => {
     }
 })
 
-// Searches the database when a date is selected
-dateSearch.addEventListener("input", () => {
-    searchOrders(document.getElementById("date-search").value)
-})
-
 //Adds click listener to search orders button
-refreshOrdersButton.addEventListener("click", () => {
-    if (dateSearch.value !== "" || dateSearch.value === undefined){
-        searchOrders(document.getElementById("date-search").value)
+searchOrdersButton.addEventListener("click", () => {
+    if (dateSearch.value !== "" || dateSearch.value === null && nameSearch.value === null || nameSearch.value == ""){
+        searchOrders(searchQuery)
     }
     }
 )
@@ -270,12 +284,12 @@ function searchOrders (date) {
 }
 
 // runs update search results when results are recieved 
-window.electronAPI.returnOrderResults(async (event, orderResults) => {
-    updateOrderResults(orderResults);
+window.electronAPI.returnOrderSearchResults((event, orderSearchResults) => {
+    updateOrderSearchResults(orderSearchResults);
 })
 
 //function that updates order search results
-function updateOrderResults(orderResults) {
+function updateOrderSearchResults(orderResults) {
     //Removes search results table ready for updating 
     if (document.getElementById("order-results-table") != undefined) {
         document.getElementById("order-results-table").remove();
@@ -286,19 +300,11 @@ function updateOrderResults(orderResults) {
         document.getElementById("no-orders-warning").remove();
     }
 
-    //converts date to format dd/mm/yyyy
+
     if (orderResults[0] != undefined ) {  
-        let date = new Date(orderResults[0].orderDate);
-        const year = date.getFullYear();
-        let month = date.getMonth() + 1;
-        let day = date.getDate();
-        if (month < 10 ){
-            month = "0" + month;
-        }
-        if (day < 10 ){
-            day = "0" + day;
-        }
-        orderDateFromSearch = `${day}/${month}/${year}`;
+
+        //converts date to format dd/mm/yyyy
+        orderDateFromSearch = formatDate(orderResults[0].orderDate);
         
         //creates table 
         let table = document.createElement("table");
@@ -445,8 +451,7 @@ function cancelOrderEdit() {
 // Saves changes made to order
 function saveOrderEdit(orderValues) {
     //builds order values for saving 
-    const originalName = orderValues.orderName;
-    const originalDate = orderValues.orderDate;
+    const id = orderValues.id;
     const editedOrderDate = orderDateUpdated.value;
     const editedOrderName = orderNameUpdated.value;
     const editedPaid = paidUpdated.checked;
@@ -469,13 +474,12 @@ function saveOrderEdit(orderValues) {
 
     //builds object for saving
     const orderValuesForSave = {
+        id: id,
         orderName: editedOrderName,
         orderDate: editedOrderDate,
         paid: editedPaid,
         orderComments: editedComments,
         breadTypesQty: editedBreadTypesQty,
-        originalDate: originalDate,
-        originalName: originalName,
     }
 
     window.electronAPI.editOrder(orderValuesForSave);
@@ -484,8 +488,8 @@ function saveOrderEdit(orderValues) {
 
 }
 
-//updates order search results when databse is updated 
-window.electronAPI.updateOrderSearchResults((event) => {
+//updates order search results
+window.electronAPI.requestOrderSearchResults((event, message) => {
     searchOrders(document.getElementById("date-search").value);
 
 })
@@ -505,3 +509,104 @@ function deleteOrder(orderValues) {
     window.electronAPI.deleteOrder(orderValues);
 }
 
+
+// loads unpaid orders list when mongo db connection is established 
+window.electronAPI.mongooseConnectionEstablished((event, connection) => {
+    window.electronAPI.updateUnpaidOrders(); 
+})  
+
+// populates unpaid orders table when values are received
+window.electronAPI.receiveUnpaidOrders((event, unpaidOrdersValues) => {
+    const unpaidOrdersTableFromHtml = document.getElementById("unpaid-orders-table");
+    
+    // Removes unpaid orders table if it exists to allow for updating
+    if(unpaidOrdersTableFromHtml !== null){
+        unpaidOrdersTableFromHtml.remove();
+    }
+
+    const unpaidOrdersTable = document.createElement("table");
+    unpaidOrdersTable.id = "unpaid-orders-table";
+    unpaidOrdersTableContainer.appendChild(unpaidOrdersTable);
+
+    const headerTr = document.createElement("tr");
+    unpaidOrdersTable.appendChild(headerTr);
+
+    const nameTh = document.createElement("th");
+    nameTh.innerText = "Name";
+    headerTr.appendChild(nameTh);
+
+    const dateTh = document.createElement("th");
+    dateTh.innerText = "Date";
+    headerTr.appendChild(dateTh);
+
+    const balanceDueTradeTh = document.createElement("th");
+    balanceDueTradeTh.innerText = "Retail";
+    headerTr.appendChild(balanceDueTradeTh);
+
+    const balanceDueRetailTh = document.createElement("th");
+    balanceDueRetailTh.innerText = "Trade";
+    headerTr.appendChild(balanceDueRetailTh);
+
+    const paidTh = document.createElement("th");
+    paidTh.innerText = "Paid";
+    headerTr.appendChild(paidTh);
+
+
+    for (let i = 0; i < unpaidOrdersValues.length; i++) {
+
+        const tr = document.createElement("tr");
+        unpaidOrdersTable.appendChild(tr);
+
+        const nameTd = document.createElement("td");
+        nameTd.innerText = unpaidOrdersValues[i].orderName;
+        tr.appendChild(nameTd);
+
+        const dateTd = document.createElement("td");
+        dateTd.innerText = formatDate(unpaidOrdersValues[i].orderDate);
+        tr.appendChild(dateTd);
+
+        const balanceDueTradeTd = document.createElement("td");
+        balanceDueTradeTd.innerText = `£${((unpaidOrdersValues[i].totalAmountDueTrade) / 100).toFixed(2)}`;
+        tr.appendChild(balanceDueTradeTd);
+
+        const balanceDueRetailTd = document.createElement("td");
+        balanceDueRetailTd.innerText = `£${((unpaidOrdersValues[i].totalAmountDueRetail) / 100).toFixed(2)}`;
+        tr.appendChild(balanceDueRetailTd);
+
+
+        const paidTd = document.createElement("td");
+        tr.appendChild(paidTd);
+
+        const paidCheckbox = document.createElement("input");
+        paidCheckbox.type = "checkbox";
+        paidCheckbox.checked = unpaidOrdersValues[i].paid;
+        paidCheckbox.id = `paidCheckbox${i}`;
+        paidCheckbox.onclick = () => orderPaid(unpaidOrdersValues[i].id, i);
+        paidTd.appendChild(paidCheckbox);
+    }
+})
+
+// changes order to paid status when paid box is checked
+function orderPaid(id, index) {
+    checked = document.getElementById(`paidCheckbox${index}`).checked;
+    if (checked === true) {
+        window.electronAPI.updateOrderToPaid(id);
+
+    }
+}
+
+// Runs update function when called for by main process
+window.electronAPI.update((event, message) => {
+    update()
+})
+
+// updates results and tables when called for
+function update() {
+    // Updates unpaid orders table in dashboard tab
+    window.electronAPI.updateUnpaidOrders(); 
+
+    // Updates search results 
+    searchOrders(document.getElementById("date-search").value);
+
+
+}

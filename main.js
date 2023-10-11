@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const breadTypes = require("./models/bread-types");
 const order = require("./models/order");
 
-var fetchBreadTypes, sendOrderSearchResults, win, breadTypesQty;
+var fetchBreadTypes, win, breadTypesQty;
 
 
 //Creates new root window
@@ -28,11 +28,12 @@ const createWindow = () => {
             const fetchedBreadTypes = await breadTypes.find({});
             // Takes wanted fields from db query and adds them to an array of objects
             for (let i = 0; i < fetchedBreadTypes.length; i++){
-                let name = fetchedBreadTypes[i].name;
-                let retailPrice = fetchedBreadTypes[i].retailPrice;
-                let tradePrice = fetchedBreadTypes[i].tradePrice;
+                const id = (fetchedBreadTypes[i]._id).toString();
+                const name = fetchedBreadTypes[i].name;
+                const retailPrice = fetchedBreadTypes[i].retailPrice;
+                const tradePrice = fetchedBreadTypes[i].tradePrice;
 
-                breadTypesForList.splice( i, 0, { name: name, tradePrice: tradePrice, retailPrice: retailPrice});
+                breadTypesForList.splice( i, 0, { id: id, name: name, tradePrice: tradePrice, retailPrice: retailPrice});
             }
             //Sends ipc message and array to reneder process
             win.webContents.send("update-bread-list", breadTypesForList);
@@ -43,16 +44,12 @@ const createWindow = () => {
     
     }
 
-    //sends order search results to render process
-    sendOrderSearchResults =  (orderSearchResults) => {
-        win.webContents.send("update-order-search-results", orderSearchResults);
-    }
-
     //Connects to mongoose 
     const mongooseConnect = async () => {
         try {
             await mongoose.connect("mongodb://localhost/ltlordersdb");
             await fetchBreadTypes();
+            win.webContents.send("mongoose-connection-established", true);
             console.log("Mongoose connection established");
         } catch (error) {
             console.log(error);
@@ -60,6 +57,10 @@ const createWindow = () => {
     }
 }
 
+// updates tables and results in renderer process
+function update() {
+    win.webContents.send("update", "message");
+}
 
 //Saves new bread type to database
 async function handleSaveBreadType (event, passedBreadType) {   
@@ -74,9 +75,9 @@ async function handleSaveBreadType (event, passedBreadType) {
 }
 
 //Deletes bread type 
-async function handleDeleteBreadType (event, breadType){
+async function handleDeleteBreadType (event, breadTypeId){
     try {
-        await breadTypes.deleteOne({ name:breadType });
+        await breadTypes.deleteOne({ _id: breadTypeId });
         fetchBreadTypes();
     } catch (error) {
         console.log(error.message);
@@ -101,6 +102,7 @@ async function handleAddOrder (event, orderValuesSent) {
             const orderForSave = new order(orderValues);
             await orderForSave.save();
             win.webContents.send("add-order-status", "ok");
+            update()
         } catch (error) {
             console.log(error);
         }
@@ -124,6 +126,7 @@ async function handleSearchOrders (event, date) {
         //builds and ipcrender send compatible array from query results
         for (let i = 0; i < orderSearchResults.length; i++) {
             breadTypesQty = [];
+            const id = (orderSearchResults[i]._id).toString();
             const orderDate = orderSearchResults[i].orderDate;
             const orderName = orderSearchResults[i].orderName;
             const breadTypesQtyFetched = orderSearchResults[i].breadTypesQty;
@@ -140,6 +143,7 @@ async function handleSearchOrders (event, date) {
             }
 
             orderSearchResultsForSend.splice(i, 0, { 
+                id: id,
                 orderDate: orderDate, 
                 orderName: orderName, 
                 breadTypesQty: breadTypesQty,
@@ -148,7 +152,7 @@ async function handleSearchOrders (event, date) {
                 standingOrder: standingOrder,
             });
         }
-        sendOrderSearchResults(orderSearchResultsForSend);
+        win.webContents.send("update-order-search-results", orderSearchResultsForSend);
     } catch (error) {
         console.log(error);
     }
@@ -158,7 +162,7 @@ async function handleSearchOrders (event, date) {
 async function handleUpdateBreadType(event, updatedBreadTypeValues) {
     try {
         await breadTypes.updateOne({
-            name: updatedBreadTypeValues.originalName
+            _id: updatedBreadTypeValues.id,
         },
         { $set: 
             {
@@ -178,8 +182,7 @@ async function handleSaveEditedOrder (event, valuesForSave) {
     try {
         await order.updateOne(
             { 
-                $and: [{orderDate: valuesForSave.originalDate}, 
-                    { orderName: valuesForSave.originalName}]
+                _id: valuesForSave.id
             },
             {
                 $set: {
@@ -192,7 +195,8 @@ async function handleSaveEditedOrder (event, valuesForSave) {
                 }
             } )
     
-        win.webContents.send("update-order-search-results");
+        win.webContents.send("request-order-search-results", "message");
+        update()
     } catch (error) {
         console.log(error);
     }
@@ -201,12 +205,55 @@ async function handleSaveEditedOrder (event, valuesForSave) {
 // Deletes specified order in database
 async function handleDeleteOrder(event, orderValues) {
     try {
-        await order.deleteOne({$and: [{ orderName: orderValues.orderName }, {orderDate: orderValues.orderDate }]});
-        win.webContents.send("update-order-search-results");
+        await order.deleteOne({ _id: orderValues.id });
+        win.webContents.send("request-order-search-results", "message");
 
     } catch (error) {
         console.log(error);
     }
+}
+
+// updates unpaid orders list 
+async function updateUnpaidOrders() {
+    try {
+        const unpaidOrderValues = await order.find({ paid: false});
+        let valuesForSend = [];
+        
+        for (let i = 0; i < unpaidOrderValues.length; i++ ) {
+            let totalAmountDueRetail = 0;
+            let totalAmountDueTrade = 0;
+
+            for (let j = 0; j < unpaidOrderValues[i].breadTypesQty.length; j++) {
+                totalAmountDueRetail = totalAmountDueRetail + (unpaidOrderValues[i].breadTypesQty[j].retailPrice * unpaidOrderValues[i].breadTypesQty[j].quantity);
+                totalAmountDueTrade = totalAmountDueTrade + (unpaidOrderValues[i].breadTypesQty[j].tradePrice * unpaidOrderValues[i].breadTypesQty[j].quantity);
+            }
+
+            valuesForSend.push({ 
+                orderName: unpaidOrderValues[i].orderName, 
+                orderDate: unpaidOrderValues[i].orderDate,
+                totalAmountDueRetail: totalAmountDueRetail,
+                totalAmountDueTrade: totalAmountDueTrade, 
+                paid: unpaidOrderValues[i].paid,
+                id: (unpaidOrderValues[i]._id).toString(),
+            })
+        }
+        win.webContents.send("receive-unpaid-orders", valuesForSend);
+
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+// runs update unpaid orders function when called for by render process 
+function handleUpdateUnpaidOrders(event) {
+    updateUnpaidOrders();
+}
+
+// Updates order to paid status 
+async function handleUpdateOrderToPaid(event, id) {
+    await order.updateOne({ _id: id }, { $set: { paid: true }});
+    updateUnpaidOrders();
+    update();
 }
 
 app.whenReady().then(() => {
@@ -217,6 +264,8 @@ app.whenReady().then(() => {
     ipcMain.on("update-bread-type", handleUpdateBreadType);
     ipcMain.on("save-edited-order", handleSaveEditedOrder);
     ipcMain.on("delete-order", handleDeleteOrder);
+    ipcMain.on("update-unpaid-orders", handleUpdateUnpaidOrders);
+    ipcMain.on("update-order-to-paid", handleUpdateOrderToPaid);
     createWindow();
 
     app.on("activate", () => {

@@ -1,12 +1,8 @@
+
+/* General */
 .flex-container {
     display: flex;
 }
-
-#add-order-container-right {
-    margin-left: 15px;
-    margin-top: 26px;
-}
-
 
 .input-box {
     display: block;
@@ -28,13 +24,6 @@
 .input-box[type=date]:focus {
     width: 122px;
 }
-
-#date-search {
-    display:inline;
-    position: relative;
-}
-
-
 
 .input-box:focus {
     outline: none;
@@ -73,14 +62,6 @@
     -ms-transform: translateY(-50%);
     transform: translateY(-50%);
     font-size: 0.9em;
-}
-
-#bread-type-retail-price {
-    padding-left: 15px;
-}
-
-#bread-type-trade-price {
-    padding-left: 15px;
 }
 
 .input-box-label {
@@ -139,6 +120,76 @@
     transition: 0.2s;
 }
 
+table, th, td {
+    border: 2px solid rgb(176, 217, 255);
+    border-collapse: collapse;
+}
+
+.checkbox-container {
+    display: block;
+    margin-top: 5px;
+    margin-left: 5px;
+}
+
+.checkbox {
+    height: 15px;
+    width: 15px;
+    margin-left: 5px;
+}
+
+.display-inline {
+    display: inline;
+}
+
+/* Dashboard */
+#unpaid-orders-table {
+    width: calc(50% - 15px);
+}
+
+#unpaid-orders-table, td {
+    text-align: center;
+}
+
+/* View Orders */
+#search-orders-button {
+    padding:5px;
+    width: 70px;
+    height: 40px;
+    margin-left: 3px;
+    margin-bottom: 0px;
+    margin-top: 23px;
+    display: inline;
+}
+
+#table-container th, td {
+    padding: 3px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+#name-search-fields-container {
+    flex-wrap: wrap;
+}
+
+/* Add Order */
+#add-order-save-btn {
+    margin-top: 10px;
+}
+
+#standing-order-fields {
+    display: none;
+}
+
+#standing-order-checkbox-container {
+    margin-bottom: 5px;
+}
+
+#add-order-container-right {
+    margin-left: 15px;
+    margin-top: 26px;
+}
+
+/* Add Bread  */
 #bread-types-qty-input li {
     list-style-type: none;
     padding: 0;
@@ -153,49 +204,10 @@
     margin-top: 10px;
 }
 
-#table-container table, th, td {
-    border: 2px solid rgb(176, 217, 255);
-    border-collapse: collapse;
-}
-
-#table-container th, td {
-    padding: 3px;
+#bread-type-retail-price {
     padding-left: 15px;
-    padding-right: 15px;
-
-}
-.checkbox-container {
-    display: block;
-    margin-top: 5px;
-    margin-left: 5px;
 }
 
-.checkbox {
-    height: 15px;
-    width: 15px;
-    margin-left: 5px;
-}
-
-#standing-order-checkbox-container {
-    margin-bottom: 5px;
-}
-
-#standing-order-fields {
-    display: none;
-}
-
-#add-order-save-btn {
-    margin-top: 10px;
-}
-
-
-#refresh-orders-button {
-    font-size: 1.2em;
-    padding:5px;
-    width: 40px;
-    height: 40px;
-    margin-left: 3px;
-    margin-bottom: 0px;
-    position: absolute;
-   
+#bread-type-trade-price {
+    padding-left: 15px;
 }
