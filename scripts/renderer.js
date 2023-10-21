@@ -48,7 +48,11 @@ function formatDate(dateValue) {
     return formatedDate;
 }
 
+/* ===================================================
 
+        ADD BREAD PAGE 
+
+    ==================================================*/
 saveBreadTypeButton.addEventListener( "click", () => {
     const breadTypeName = document.getElementById("bread-type-name");
     const breadTypeTradePrice = document.getElementById("bread-type-trade-price");
@@ -183,6 +187,12 @@ function updateBreadType(breadTypeId) {
     popup.classList.remove("show-popup");
 }
 
+/* ===================================================
+
+        ADD ORDER PAGE 
+
+    ==================================================*/
+
 //add order function 
 function addOrder () {
     //empties the breadTypesQty array ready for updating 
@@ -278,7 +288,13 @@ window.electronAPI.addOrderSatus((event,status) => {
     }
 })
 
-//Adds click listener to search orders button
+/* ===================================================
+
+        VIEW ORDERS PAGE 
+
+    ==================================================*/
+
+// Searches orders
 searchOrdersButton.addEventListener("click", () => {
 
     // Sets the search field combination 
@@ -738,6 +754,12 @@ function confirmDeleteOrder(orderValues) {
 function deleteOrder(orderValues) {
     window.electronAPI.deleteOrder(orderValues);
 }
+
+/* ===================================================
+
+        DASHBOARD PAGE 
+
+    ==================================================*/
 
 
 // loads unpaid orders list when mongo db connection is established 
