@@ -23,10 +23,12 @@ const paidUpdated = document.getElementById("paid-updated");
 const orderCommentsUpdated = document.getElementById("order-comments-updated");
 const deleteOrderButton = document.getElementById("delete-order-button");
 const unpaidOrdersTableContainer = document.getElementById("unpaid-orders-list");
-const nameSearch = document.getElementById("")
+const nameSearch = document.getElementById("name-search");
+const nameSearchStartDate = document.getElementById("name-search-start-date");
+const nameSearchEndDate = document.getElementById("name-search-end-date");
 
 var breadTypesQty = [];
-var breadTypes, breadTypeQtyListItemsFetched, orderDateFromSearch, paid, standingOrder,
+var breadTypes, breadTypeQtyListItemsFetched, paid, standingOrder,
 breadTypeForEdit;
 var breadTypesQtyItems = [];
 
@@ -247,7 +249,9 @@ window.electronAPI.addOrderSatus((event,status) => {
         // Hides standing order fields 
         standingOrderFields.style.display = "none";
 
-    } else if (status == "no-name") {
+    } 
+    
+    if (status == "no-name") {
         //Throws error if no order name is supplied 
         inputBoxLabelOrderDate.style.color = "red";
         orderName.placeholder = "Enter an order name";
@@ -255,13 +259,17 @@ window.electronAPI.addOrderSatus((event,status) => {
         inputBoxLabelOrderDate.style.color = "black";
 
 
-    } else if (status == "no-date") {
+    }
+    
+    if (status == "no-date") {
         //Throws error if no date is supplied 
         inputBoxLabelOrderDate.innerText = "Enter an order date";
         inputBoxLabelOrderDate.style.color = "red";
         inputBoxLabelOrderName.style.color = "black";
         orderName.placeholder = "";
-    }else if (status == "no-name-and-no-date") {
+    }
+    
+    if (status == "no-name-and-no-date") {
         // Throws error if both no name and no date are supplied 
         inputBoxLabelOrderName.style.color = "red";
         orderName.placeholder = "Enter an order name";
@@ -272,119 +280,341 @@ window.electronAPI.addOrderSatus((event,status) => {
 
 //Adds click listener to search orders button
 searchOrdersButton.addEventListener("click", () => {
-    if (dateSearch.value !== "" || dateSearch.value === null && nameSearch.value === null || nameSearch.value == ""){
-        searchOrders(searchQuery)
-    }
-    }
-)
 
-// Function for searching for order in database 
-function searchOrders (date) {
-    window.electronAPI.searchOrders(date);
-}
+    // Sets the search field combination 
+    const  isOnlyDate = 
+        dateSearch.value !== "" &&
+        nameSearch.value === "" &&        
+        nameSearchStartDate.value === "" && 
+        nameSearchEndDate.value === ""
+
+    const isOnlyName = 
+        nameSearch.value !== "" &&
+        dateSearch.value === "" &&
+        nameSearchStartDate.value === "" && 
+        nameSearchEndDate.value === "" 
+
+    const isName1Date = 
+        dateSearch.value !== "" && 
+        nameSearch.value !== "" && 
+        nameSearchStartDate.value === "" && 
+        nameSearchEndDate.value === ""
+
+    const isName2Dates = 
+        nameSearch.value !== "" && 
+        nameSearchStartDate.value !== "" && 
+        nameSearchEndDate.value !== "" &&
+        dateSearch.value === ""
+
+    const isBetweenDates = 
+        nameSearch.value === "" && 
+        nameSearchStartDate.value !== "" && 
+        nameSearchEndDate.value !== "" &&
+        dateSearch.value === ""
+
+    let validCombination = false;
+
+    // Runs correct search depending on search field combination used 
+    if (isOnlyDate){
+        window.electronAPI.searchOrdersDate(dateSearch.valueAsDate);
+        validCombination = true;
+    }
+
+    if (isOnlyName){
+        window.electronAPI.searchOrdersName(nameSearch.value);
+        validCombination = true;
+    }
+
+    if (isName1Date){
+        window.electronAPI.searchOrdersName1Date(nameSearch.value, dateSearch.valueAsDate);
+        validCombination = true;
+    }
+
+    if (isName2Dates){
+        window.electronAPI.searchOrdersName2Dates(
+            nameSearch.value, 
+            nameSearchStartDate.valueAsDate, 
+            nameSearchEndDate.valueAsDate
+            );
+        validCombination = true; 
+    }
+
+    if (isBetweenDates) {
+        window.electronAPI.searchOrdersBetweenDates(
+            nameSearchStartDate.valueAsDate, 
+            nameSearchEndDate.valueAsDate
+            );
+        validCombination = true;
+    }
+
+    // Throws error if search field combination is invalid 
+    if (!validCombination){
+        //Removes any error messages already present 
+        removeSearchError();
+        // Creates error container to allow error message removal 
+        const errorContainer = document.createElement("div");
+        errorContainer.id = "error-container";
+        tableContainer.appendChild(errorContainer);
+        //Creates invalid search query message 
+        const invalidQueryError = document.createElement("p");
+        invalidQueryError.id = "invalid-query-message";
+        invalidQueryError.innerText = "Error: Invalid search query";
+        errorContainer.appendChild(invalidQueryError);
+
+    }
+
+})
 
 // runs update search results when results are recieved 
 window.electronAPI.returnOrderSearchResults((event, orderSearchResults) => {
     updateOrderSearchResults(orderSearchResults);
 })
 
-//function that updates order search results
-function updateOrderSearchResults(orderResults) {
+//removes error messages 
+function removeSearchError() {
+    if (document.getElementById("error-container") != undefined) {
+        document.getElementById("error-container").remove();
+    }
     //Removes search results table ready for updating 
     if (document.getElementById("order-results-table") != undefined) {
         document.getElementById("order-results-table").remove();
     }
 
-    //removes no orders warning
-    if (document.getElementById("no-orders-warning") != undefined) {
-        document.getElementById("no-orders-warning").remove();
+}
+
+//function that updates order search results
+function updateOrderSearchResults(orderResults) {
+
+    // Populates an array with all the bread types in the search results
+    function findAllBreadTypes(date){
+        let breadTypes = [];
+        // Populates breadTypes array with each different bread type
+        // in the search results  
+        for (let i = 0; i < orderResults.length; i++) {
+            var breadTypesQtyNames = [];
+            
+            // Adds the names from the current order results to the array breadTypesQtyNames
+            for (let j = 0; j < (orderResults[i].breadTypesQty).length; j++){
+                const breadTypeName = (orderResults[i].breadTypesQty[j]).name;
+                breadTypesQtyNames.push(breadTypeName)
+            }
+            // Adds any name that doesn't already exist in the breadTypes array 
+            for (let j = 0; j < breadTypesQtyNames.length; j++){
+                const correctDate = (orderResults[i].orderDate).toISOString() == date;
+                if (!breadTypes.includes(breadTypesQtyNames[j]) && correctDate){
+                    breadTypes.push(breadTypesQtyNames[j]);
+                }
+            }
+        }
+        return breadTypes;
     }
 
+    // Creates date row in order search results table
+    function createDateRow(date){
+        //creates date row 
+        const dateRow = document.createElement("tr");
+        dateRow.id = "date-row";
+        table.appendChild(dateRow);
+        //creates first row items 
+        const dateRowDate = document.createElement("th");
+        dateRowDate.innerText = date;
+        dateRow.appendChild(dateRowDate);
+    }
+
+    // Creates a table row displaying the days total for each bread type
+    function createTotalsRow(date){
+        
+        // Creates totals row
+        const totalsTr = document.createElement("tr");
+        table.appendChild(totalsTr);
+
+        // Creates label
+        const totalsLabel = document.createElement("td");
+        totalsLabel.innerText = "Total"
+        totalsLabel.classList.add("totals-td")
+        totalsTr.appendChild(totalsLabel);
+
+        const allBreadTypes = findAllBreadTypes(date);
+        
+        var totalBreadTypeQty = {};
+        // totalBreadTypesQty object is populated with 
+        // each bread type name as a key and a value of 0
+        for (let i = 0; i < allBreadTypes.length; i++){
+            totalBreadTypeQty[allBreadTypes[i]] = 0;
+        }
+
+        // Updates the breadTypesQty object values to the correct quantity
+        for (let i = 0; i < orderResults.length; i++){
+            const correctDate = (orderResults[i].orderDate).toISOString() == date;
+            if (correctDate){
+                for (let j = 0; j < (orderResults[i].breadTypesQty).length; j++){               
+                    const breadType = (orderResults[i].breadTypesQty[j]).name;
+                    totalBreadTypeQty[breadType] = 
+                        totalBreadTypeQty[breadType]  
+                        +  parseInt((orderResults[i].breadTypesQty[j]).quantity);
+                } 
+            }
+        }
+        // Builds a td element for each total quantity in the results table
+        for (let i = 0; i < allBreadTypes.length; i++){
+            const total = totalBreadTypeQty[allBreadTypes[i]];
+            const totalTd = document.createElement("td");
+            totalTd.innerText = total;
+            totalTd.classList.add("totals-td");
+            totalsTr.appendChild(totalTd);
+        
+        }
+        // builds an empty space filling td element
+        const emptyTd = document.createElement("td");
+        totalsTr.appendChild(emptyTd);
+    }
+
+    //removes error messages 
+    removeSearchError();
 
     if (orderResults[0] != undefined ) {  
 
-        //converts date to format dd/mm/yyyy
-        orderDateFromSearch = formatDate(orderResults[0].orderDate);
-        
+        var includedDates = [];
+
+        // Populates the includedDates array with all the different dates that appear in the search results
+        for ( let i = 0; i < orderResults.length; i++) {
+
+            if(!includedDates.includes((orderResults[i].orderDate).toISOString())){
+                includedDates.push((orderResults[i].orderDate).toISOString())
+            }
+        }
+       
         //creates table 
-        let table = document.createElement("table");
+        var table = document.createElement("table");
         table.id = "order-results-table";
         tableContainer.appendChild(table);
-        //creates first row 
-        const firstRow = document.createElement("tr");
-        firstRow.id = "first-row";
-        table.appendChild(firstRow);
-        //creates first row items 
-        const firstRowDate = document.createElement("th");
-        firstRowDate.innerText = orderDateFromSearch;
-        firstRow.appendChild(firstRowDate);
         
-        //Creates order name column 
-        for ( let i = 0; i < orderResults.length; i++) {
-            const trName = document.createElement("tr");
-            table.appendChild(trName);
-            const orderNameTd = document.createElement("td");
-            orderNameTd.innerText = orderResults[i].orderName;
-            orderNameTd.rowSpan = 2;
-            orderNameTd.classList.add("order-name-td");
-            trName.appendChild(orderNameTd);
-            //Creates bread name table data item
-            for (let j = 0; j < orderResults[i].breadTypesQty.length; j++) {
-                const breadTypesNameTd = document.createElement("td");
-                breadTypesNameTd.innerText = orderResults[i].breadTypesQty[j].name;
-                breadTypesNameTd.classList.add("bread-types-name-td");
-                trName.appendChild(breadTypesNameTd);
+        
+
+        //Creates order name column
+        for (let j = 0; j < includedDates.length; j++){
+            
+            let newDate = true;
+            // declares date variable for totals column
+            let totalsDate;
+            // Creates date row for each different date in search results
+            if(includedDates.length > 0){
+                createDateRow(formatDate(includedDates[j]));
+                totalsDate = (includedDates[j]);
+            }else{
+                createDateRow(formatDate(orderResults[0].orderDate));
+                totalsDate = (orderResults[0].orderDate).toISOString();
             }
-            let trQuantity = document.createElement("tr");
-            table.appendChild(trQuantity);
-            //Creates bread type quantity table data item
-            for (let k = 0; k < orderResults[i].breadTypesQty.length; k++) {
-                const breadTypesQtyTd = document.createElement("td");
-                breadTypesQtyTd.innerText = orderResults[i].breadTypesQty[k].quantity;
-                breadTypesQtyTd.classList.add("bread-types-qty-td");
-                trQuantity.appendChild(breadTypesQtyTd);
+            
+            const allBreadTypes = findAllBreadTypes(totalsDate);
+            console.log(allBreadTypes);
+
+            // Creates the bread types and quantities in the search results table
+            for ( let i = 0; i < orderResults.length; i++) {
+                if((orderResults[i].orderDate).toISOString() == totalsDate){
+                    console.log("running ln 512")
+                    // creates bread types row for each new date 
+                    if (newDate){
+                        const trName = document.createElement("tr");
+                        table.appendChild(trName);
+
+                        // Creates an empty td element to fill space at the start
+                        const emptyTd = document.createElement("td");
+                        trName.appendChild(emptyTd);
+                            
+                        for (let k = 0; k < allBreadTypes.length; k++) {
+                            const breadTypesNameTd = document.createElement("td");
+                            breadTypesNameTd.innerText = allBreadTypes[k];
+                            breadTypesNameTd.classList.add("bread-types-name-td");
+                            trName.appendChild(breadTypesNameTd);
+                        }
+
+                        // Creates an empty td element to fill space at the end 
+                        const emptyTdEnd = document.createElement("td");
+                        trName.appendChild(emptyTdEnd);
+                    }
+
+                    // sets new date to false so bread types will not be displayed
+                    // until an new date is displayed
+                    newDate = false;
+
+                    const quantitiesTr = document.createElement("tr");
+                    table.appendChild(quantitiesTr);
+                    // Creates name label
+                    const tdName = document.createElement("td");
+                    quantitiesTr.appendChild(tdName);
+                    const commentsContainer = document.createElement("div");
+                    commentsContainer.classList.add("comments-container");
+                    tdName.appendChild(commentsContainer);
+                    //Creates comments label 
+                    const nameLabel = document.createElement("label");
+                    nameLabel.innerText = orderResults[i].orderName;
+                    nameLabel.classList.add("name-label");
+                    commentsContainer.appendChild(nameLabel);
+                    //Creates comments popup
+                    const commentsPopup = document.createElement("div");
+                    commentsPopup.classList.add("comments-popup");
+                    commentsContainer.appendChild(commentsPopup);
+                    // Creates comments text div
+                    const commentsText = document.createElement("div");
+                    if (orderResults[i].orderComments == "" || orderResults[i].orderComments == undefined){
+                        commentsText.innerText = "This order has no comments";
+                    } else {
+                        commentsText.innerText = orderResults[i].orderComments;
+                    }
+                    commentsPopup.appendChild(commentsText);
+
+                    // Gets the correct quantity for the breadTypesQtyTd element 
+                    for (let j = 0; j < allBreadTypes.length; j++) {
+                        let breadTypesQtyData = 0;
+                        for(let k = 0; k < (orderResults[i].breadTypesQty).length; k++){
+                            try {
+                                if (orderResults[i].breadTypesQty[k].name == allBreadTypes[j]){
+                                    breadTypesQtyData = orderResults[i].breadTypesQty[k].quantity;
+                                }
+                                
+                            } catch (error) {
+                                breadTypesQtyData = 0;
+                            }
+                        }
+                        // Creates table data element for the bread type quantity
+                        const breadTypesQtyTd = document.createElement("td");
+                        breadTypesQtyTd.innerText = breadTypesQtyData;
+                        breadTypesQtyTd.classList.add("bread-types-qty-td");
+                        quantitiesTr.appendChild(breadTypesQtyTd);
+                    }
+
+                    // Creates edit button table data element
+                    const tdEdit = document.createElement("td");
+                    quantitiesTr.appendChild(tdEdit);
+
+                    // Creates edit button
+                    const editLabel = document.createElement("Label");
+                    editLabel.classList.add("edit-label");
+                    editLabel.style.textDecoration = "underline";
+                    editLabel.innerText = "Edit";
+                    editLabel.onclick = () => {editOrder(orderResults[i])}
+                    tdEdit.appendChild(editLabel);                 
+                }
             }
-            // Creates comments label
-            const tdComments = document.createElement("td");
-            trName.appendChild(tdComments);
-            const commentsContainer = document.createElement("div");
-            commentsContainer.classList.add("comments-container");
-            tdComments.appendChild(commentsContainer);
-            //Creates comments label 
-            const commentsLabel = document.createElement("label");
-            commentsLabel.innerText = "Comments";
-            commentsLabel.classList.add("comments-label");
-            commentsContainer.appendChild(commentsLabel);
-            //Creates comments popup
-            const commentsPopup = document.createElement("div");
-            commentsPopup.classList.add("comments-popup");
-            commentsContainer.appendChild(commentsPopup);
-            // Creates comments text div
-            const commentsText = document.createElement("div");
-            if (orderResults[i].orderComments == "" || orderResults[i].orderComments == undefined){
-                commentsText.innerText = "This order has no comments";
-            } else {
-                commentsText.innerText = orderResults[i].orderComments;
-            }
-            commentsPopup.appendChild(commentsText);
-            const tdEdit = document.createElement("td");
-            trQuantity.appendChild(tdEdit);
-            // Creates edit button
-            const editLabel = document.createElement("Label");
-            editLabel.classList.add("edit-label");
-            editLabel.style.textDecoration = "underline";
-            editLabel.innerText = "Edit";
-            editLabel.onclick = () => {editOrder(orderResults[i])}
-            tdEdit.appendChild(editLabel);
+            
+            //adds totals row
+            createTotalsRow(totalsDate);
         }
-   
+
     } else {
+        // Creates error container to allow error message removal 
+        const errorContainer = document.createElement("div");
+        errorContainer.id = "error-container";
+        tableContainer.appendChild(errorContainer);
+
         //Creates no orders logged message 
         const noOrdersForTodayWarning = document.createElement("p");
         noOrdersForTodayWarning.id = "no-orders-warning";
         noOrdersForTodayWarning.innerText = "There are no logged orders for the selected date";
-        tableContainer.appendChild(noOrdersForTodayWarning);
+        errorContainer.appendChild(noOrdersForTodayWarning);
     }
+
 
 }
 
@@ -484,13 +714,13 @@ function saveOrderEdit(orderValues) {
 
     window.electronAPI.editOrder(orderValuesForSave);
     orderEditPopup.classList.remove("show-popup");
-    searchOrders(document.getElementById("date-search").value);
+    searchOrdersButton.click();
 
 }
 
 //updates order search results
 window.electronAPI.requestOrderSearchResults((event, message) => {
-    searchOrders(document.getElementById("date-search").value);
+    searchOrdersButton.click();
 
 })
 
@@ -499,7 +729,7 @@ function confirmDeleteOrder(orderValues) {
     if (confirm("Are you sure you want to delete this order?") == true){
         deleteOrder(orderValues);
         cancelOrderEdit();
-        searchOrders(document.getElementById("date-search").value);
+        searchOrdersButton.click();
     }
         
 }
@@ -606,7 +836,7 @@ function update() {
     window.electronAPI.updateUnpaidOrders(); 
 
     // Updates search results 
-    searchOrders(document.getElementById("date-search").value);
+    searchOrdersButton.click();
 
 
 }

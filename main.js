@@ -10,8 +10,8 @@ var fetchBreadTypes, win, breadTypesQty;
 //Creates new root window
 const createWindow = () => {
     win = new BrowserWindow({
-        width: 1000,
-        height: 650,
+        width: 1100,
+        height: 700,
         webPreferences: {
             preload: path.join(__dirname, "scripts/preload.js")
         }
@@ -117,11 +117,9 @@ async function handleAddOrder (event, orderValuesSent) {
     }
 }
 
-//Searches orders in database
-async function handleSearchOrders (event, date) {
-    try {
-        const orderSearchResults = await order.find({ orderDate: date});
-        let orderSearchResultsForSend = [];
+// Builds array of order details and sends it to the renderer proccess 
+function sendSearchResults(orderSearchResults){
+    let orderSearchResultsForSend = [];
         breadTypesQty = [];
         //builds and ipcrender send compatible array from query results
         for (let i = 0; i < orderSearchResults.length; i++) {
@@ -133,6 +131,7 @@ async function handleSearchOrders (event, date) {
             const orderComments = orderSearchResults[i].orderComments;
             const paid = orderSearchResults[i].paid;
             const standingOrder = orderSearchResults[i].standingOrder;
+        
             for ( let j = 0; j < breadTypesQtyFetched.length; j++){
                 breadTypesQty.splice(j, 0, { 
                     name: breadTypesQtyFetched[j].name, 
@@ -153,10 +152,61 @@ async function handleSearchOrders (event, date) {
             });
         }
         win.webContents.send("update-order-search-results", orderSearchResultsForSend);
+}
+
+//Searches orders in database on specific date 
+async function handleSearchOrdersDate (event, date) {
+    try {
+        const orderSearchResults = await order.find({ orderDate: date});
+        sendSearchResults(orderSearchResults)
     } catch (error) {
         console.log(error);
     }
 }
+
+// Searches orders in database with specific name
+async function handleSearchOrdersName (event, name) {
+    try {
+        const orderSearchResults = await order.find({ orderName: name});
+        sendSearchResults(orderSearchResults);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+// Searces orders in database with specific name on a certain date
+async function handleSearchOrdersName1Date (event, name, date) {
+    try {
+        const orderSearchResults = await order.find({$and: [{orderName: name}, {orderDate: date}]});
+        sendSearchResults(orderSearchResults);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+// Searches orders in database with specific name between two dates 
+async function handleSearchOrdersName2Dates (event, name, startDate, endDate) {
+    try {
+        const orderSearchResults = await order.find({ $and: [ {orderName: name}, {orderDate: {$gte: startDate, $lte: endDate}}]});
+        sendSearchResults(orderSearchResults);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+// Searches orders between two dates 
+async function handleSearchOrdersBetweenDates (event, startDate, endDate) {
+    try {
+        const orderSearchResults = await order.find({ orderDate: {$gte: startDate, $lte: endDate}});
+        sendSearchResults(orderSearchResults);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+
+
+
 
 // Updates bread type in database when bread type is edited 
 async function handleUpdateBreadType(event, updatedBreadTypeValues) {
@@ -260,7 +310,11 @@ app.whenReady().then(() => {
     ipcMain.on("save-bread-type", handleSaveBreadType);
     ipcMain.on("delete-bread-type", handleDeleteBreadType);
     ipcMain.on("add-order", handleAddOrder);
-    ipcMain.on("search-orders", handleSearchOrders);
+    ipcMain.on("search-orders-date", handleSearchOrdersDate);
+    ipcMain.on("search-orders-name", handleSearchOrdersName);
+    ipcMain.on("search-orders-name-1-date", handleSearchOrdersName1Date);
+    ipcMain.on("search-orders-name-2-dates", handleSearchOrdersName2Dates);
+    ipcMain.on("search-orders-between-dates", handleSearchOrdersBetweenDates),
     ipcMain.on("update-bread-type", handleUpdateBreadType);
     ipcMain.on("save-edited-order", handleSaveEditedOrder);
     ipcMain.on("delete-order", handleDeleteOrder);
