@@ -50,20 +50,6 @@
     width: 252px;
 }
 
-.currency-wrap {
-    position: relative;
-}
-
-.currency-sign {
-    position: absolute;
-    left: 8px;
-    margin: 0;
-    top: 47%;
-    -ms-transform: translateY(-50%);
-    transform: translateY(-50%);
-    font-size: 0.9em;
-}
-
 .input-box-label {
     font-size: 0.8em;
     padding: 0;
@@ -155,7 +141,7 @@ table, th, td {
 }
 
 /* View Orders */
-#search-orders-button {
+.search-button {
     padding:5px;
     width: 70px;
     height: 40px;
@@ -165,13 +151,23 @@ table, th, td {
     display: inline;
 }
 
+.search-button:hover {
+    background-color: rgb(23, 142, 253);
+    padding:5px;
+    width: 70px;
+    height: 40px;
+    margin-left: 3px;
+    margin-bottom: 5px;
+    margin-top: 23px;
+}
+
 #table-container th, td {
     padding: 3px;
     padding-left: 15px;
     padding-right: 15px;
 }
 
-#search-fields-container {
+#search-fields-container, #invoice-fields-container{
     flex-wrap: wrap;
 }
 
@@ -215,3 +211,40 @@ table, th, td {
 #bread-type-trade-price {
     padding-left: 15px;
 }
+
+.currency-wrap {
+    position: relative;
+}
+
+.input-content {
+    position: absolute;
+    left: 8px;
+    margin: 0;
+    top: 47%;
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+    font-size: 0.9em;
+}
+
+/* Add customer */
+.formula-container {
+    position: relative;
+
+}
+
+#per-cent-sign {
+    left: 170px; 
+}
+
+#negative-sign {
+    top: 45%;
+}
+
+#trade-price-formula {
+    padding-left: 15px;
+}
+
+.saved-customers-list-items {
+    list-style-type: none;
+}
+

@@ -5,10 +5,6 @@ const breadTypeSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    tradePrice: {
-        type: Number,
-
-    },
     retailPrice: {
         type: Number,
     },

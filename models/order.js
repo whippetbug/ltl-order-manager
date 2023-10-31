@@ -17,10 +17,6 @@ const orderSchema = new mongoose.Schema({
         type: Boolean
     },
 
-    standingOrder: {
-        type: Boolean
-    },
-
     invoiceSent: {
         type: Boolean,
         default: false
@@ -28,12 +24,6 @@ const orderSchema = new mongoose.Schema({
 
     orderComments: {
         type: String 
-    },
-
-    createdAt: {
-        type: Date, 
-        default: () => Date.now(), 
-        immutable: true,
     },
 
 })

@@ -1,80 +1,136 @@
 const inputBoxLabelOrderDate = document.getElementById("input-box-label-order-date");
 const inputBoxLabelOrderName = document.getElementById("input-box-label-order-name");
-var paid, breadTypeQtyListItemsFetched, standingOrder
+const tradeCheckbox = document.getElementById("trade-checkbox");
+const tradeOptions = document.getElementById("trade-options");
+const retailOptions = document.getElementById("retail-options");
+const tradeCustomersSelect = document.getElementById("trade-customers-select");
+const tradeCustomersSelectOptions = document.getElementsByClassName("trade-customer-select-option");
+const defaultOption = document.getElementById("default-option");
+const tradeCustomersSelectLabel = document.getElementById("trade-customers-select-label");
+var paid, breadTypeQtyListItemsFetched, trade, breadTypesQty
 
-//add order function 
+tradeCheckbox.addEventListener("click", () => {
+    if (tradeCheckbox.checked){
+        tradeOptions.style.display = "block";
+        retailOptions.style.display = "none";
+        trade = true;
+    }
+    if (!tradeCheckbox.checked) {
+        tradeOptions.style.display = "none";
+        retailOptions.style.display = "block";
+        trade = false;
+    }
+})
+
+// To set page to trade by default
+tradeCheckbox.click();
+
+function createCustomerSelectOptions(customers) {
+    const tradeCustomersSelectOptionsLength = tradeCustomersSelectOptions.length;
+
+    if (tradeCustomersSelectOptions !== undefined) {
+        for (let i = 0; i < tradeCustomersSelectOptionsLength; i++){
+            document.getElementById(`trade-customers-option-${i}`).remove();
+        }
+    }
+    for (let i = 0; i < customers.length; i++) {
+        const option = document.createElement("option");
+        option.value = customers[i].name;
+        option.innerText = customers[i].name;
+        option.id = `trade-customers-option-${i}`;
+        option.classList.add("trade-customer-select-option");
+        tradeCustomersSelect.appendChild(option);
+    }
+}
+
 function addOrder () {
-    //empties the breadTypesQty array ready for updating 
+    const selectedCustomerIndex = tradeCustomersSelect.selectedIndex;
+    const selectedCustomer = tradeCustomersSelect.options[selectedCustomerIndex];
+    
     breadTypesQty = [];
-    const orderName = document.getElementById("order-name").value;
     const orderDate = document.getElementById("order-date").value;
     const orderComments = document.getElementById("order-comments").value;
 
-    
-    
-    // Assignes boolean value to the state of the paid checkbox
-    if (paidCheckbox.checked == true){
+    if (paidCheckbox.checked){
         paid = true;
     } else {
         paid = false;
     }
 
-    // Assignes boolean value to the state of standingOrder checkbox 
-    if (standingOrderCheckBox.checked == true) {
-        standingOrder = true;
-    } else {
-        standingOrder = false;
+    for (let i = 0; i < globalCustomerData.length; i++) {
+
     }
 
+
     for (let i = 0; i < breadTypeQtyListItemsFetched.length ; i++) {
+        let tradePrice;
+        if (trade){
+            tradePrice = breadTypes[i].retailPrice - (
+                // selectedCustomerIndex - 1 is needed to account for the 
+                // select customer option that is hidden and set by defualt
+                globalCustomerData[selectedCustomerIndex - 1].tradePriceFormula * 
+                breadTypes[i].retailPrice
+                )
+        }
+        if (!trade) {
+            tradePrice = 0.00;
+        }
+
         breadTypesQty.push({ 
             name: breadTypes[i].name,
             quantity: document.getElementById(`${breadTypes[i].name}-qty-input`).value,
-            tradePrice: breadTypes[i].tradePrice, 
-            retailPrice: breadTypes[i].retailPrice 
+            tradePrice: tradePrice,
+            retailPrice: breadTypes[i].retailPrice
         });
     }
+    let orderName;
+
+    if (trade){
+        orderName = selectedCustomer.value;
+    }
+    if (!trade) {
+        orderName = document.getElementById("order-name").value;
+    }
+
     const orderValues = { 
         orderName: orderName, 
         orderDate: orderDate, 
         breadTypesQty: breadTypesQty, 
         orderComments: orderComments,
         paid: paid,
-        standingOrder: standingOrder,
         };
     window.electronAPI.addOrder(orderValues);
 
 }
 
 window.electronAPI.addOrderSatus((event,status) => {
-    //function to clear imput boxes when all is ok
+    let orderNameLabel;
+    if (trade) {
+        orderNameLabel = tradeCustomersSelectLabel;
+    }
+    if (!trade) {
+        orderNameLabel = inputBoxLabelOrderName;
+    }
+
     if (status == "ok") {
-        //sets labels for input boxes to default in case of error changing their style
-        inputBoxLabelOrderDate.style.color = "black";
-        document.getElementById("order-name").placeholder = "";
+        nameInputLabel.style.color = "black";
+        orderName.placeholder = "";
         inputBoxLabelOrderDate.innerText = "Order Date";
         inputBoxLabelOrderDate.style.color = "black";
 
-
-        //Clears quantity input boxes
         for (let i = 0; i < breadTypeQtyListItemsFetched.length ; i++) {
             document.getElementById(`${breadTypes[i].name}-qty-input`).value = "" ;  
         }
-        //Clears name input box
-        document.getElementById("order-name").value = "";
-        // Clears comments box 
+        
+        document.getElementById("order-name").value = "";       
         document.getElementById("order-comments").value = "";
-        // Unchecks check boxes 
         paidCheckbox.checked = false;
-        standingOrderCheckBox.checked = false;
-        // Hides standing order fields 
-        standingOrderFields.style.display = "none";
+        defaultOption.selected = true;
 
     } 
     
     if (status == "no-name") {
-        //Throws error if no order name is supplied 
-        inputBoxLabelOrderDate.style.color = "red";
+        orderNameLabel.style.color = "red";
         orderName.placeholder = "Enter an order name";
         inputBoxLabelOrderDate.innerText = "Order Date";
         inputBoxLabelOrderDate.style.color = "black";
@@ -83,27 +139,18 @@ window.electronAPI.addOrderSatus((event,status) => {
     }
     
     if (status == "no-date") {
-        //Throws error if no date is supplied 
         inputBoxLabelOrderDate.innerText = "Enter an order date";
         inputBoxLabelOrderDate.style.color = "red";
-        inputBoxLabelOrderName.style.color = "black";
+        orderNameLabel.style.color = "black";
         orderName.placeholder = "";
     }
     
     if (status == "no-name-and-no-date") {
-        // Throws error if both no name and no date are supplied 
-        inputBoxLabelOrderName.style.color = "red";
+        orderNameLabel.style.color = "red";
         orderName.placeholder = "Enter an order name";
         inputBoxLabelOrderDate.innerText = "Enter an order date";
         inputBoxLabelOrderDate.style.color = "red";
     }
+
 })
 
-//shows and hides standing order fields
-standingOrderCheckBox.addEventListener("change", () => {
-    if (standingOrderCheckBox.checked == true) {
-        standingOrderFields.style.display = "block";
-    }else {
-        standingOrderFields.style.display = "none";
-    }
-})

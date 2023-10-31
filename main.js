@@ -1,32 +1,31 @@
+require('dotenv').config();
 const {app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const mongoose = require("mongoose");
 const breadTypes = require("./models/bread-types");
 const order = require("./models/order");
+const customer = require("./models/customer");
 
 var fetchBreadTypes, win, breadTypesQty;
 
-
-//Creates new root window
 const createWindow = () => {
     win = new BrowserWindow({
         width: 1100,
         height: 700,
         webPreferences: {
-            preload: path.join(__dirname, "scripts/preload.js")
+            preload: path.join(__dirname, "scripts/preload.js"),
+            devTools: !app.isPackaged,
         }
     });
 
-    //Loads html file then connects to mongoose
     win.loadFile("index.html").then(() => { mongooseConnect() });
 
-    //Fetches bread types
     fetchBreadTypes  = async () => {
         
         try {
             let breadTypesForList = [];
             const fetchedBreadTypes = await breadTypes.find({});
-            // Takes wanted fields from db query and adds them to an array of objects
+            // Array needed to send data to renderer process successfully 
             for (let i = 0; i < fetchedBreadTypes.length; i++){
                 const id = (fetchedBreadTypes[i]._id).toString();
                 const name = fetchedBreadTypes[i].name;
@@ -35,7 +34,7 @@ const createWindow = () => {
 
                 breadTypesForList.splice( i, 0, { id: id, name: name, tradePrice: tradePrice, retailPrice: retailPrice});
             }
-            //Sends ipc message and array to reneder process
+
             win.webContents.send("update-bread-list", breadTypesForList);
 
         } catch (error) {
@@ -44,11 +43,13 @@ const createWindow = () => {
     
     }
 
-    //Connects to mongoose 
     const mongooseConnect = async () => {
         try {
-            await mongoose.connect("mongodb://localhost/ltlordersdb");
-            await fetchBreadTypes();
+            await mongoose.connect(process.env.DATABASE_URL);
+            fetchBreadTypes();
+            handleUpdateUnpaidOrders();
+            handleFetchCustomerData();
+
             win.webContents.send("mongoose-connection-established", true);
             console.log("Mongoose connection established");
         } catch (error) {
@@ -62,7 +63,6 @@ function update() {
     win.webContents.send("update", "message");
 }
 
-//Saves new bread type to database
 async function handleSaveBreadType (event, passedBreadType) {   
     try {
         const breadTypeForSave = new breadTypes(passedBreadType);
@@ -74,7 +74,6 @@ async function handleSaveBreadType (event, passedBreadType) {
         
 }
 
-//Deletes bread type 
 async function handleDeleteBreadType (event, breadTypeId){
     try {
         await breadTypes.deleteOne({ _id: breadTypeId });
@@ -83,8 +82,7 @@ async function handleDeleteBreadType (event, breadTypeId){
         console.log(error.message);
     }
 }
-
-//Adds new order to db 
+ 
 async function handleAddOrder (event, orderValuesSent) {
     let orderValues = orderValuesSent
 
@@ -95,7 +93,9 @@ async function handleAddOrder (event, orderValuesSent) {
         }
     }
 
-    // Checks to see if all required values are present 
+    const noName = orderValues.orderName == "" || orderValues.orderName == "none";
+    const noDate = orderValues.orderDate == "" 
+
     if (orderValues.orderName != "" && orderValues.orderDate != "") {
         
         try {
@@ -106,22 +106,21 @@ async function handleAddOrder (event, orderValuesSent) {
         } catch (error) {
             console.log(error);
         }
-    }else if (orderValues.orderName == "" && orderValues.orderDate == "" ) {
+    }else if (noName && noDate) {
         win.webContents.send("add-order-status", "no-name-and-no-date");
 
-    }else if (orderValues.orderName == "" ) {
+    }else if (noName) {
         win.webContents.send("add-order-status", "no-name");
 
-    }else if (orderValues.orderDate == "" ) {
+    }else if (noDate) {
         win.webContents.send("add-order-status", "no-date");
     }
 }
 
-// Builds array of order details and sends it to the renderer proccess 
+// Arrray needed to send data to renderer process successfully 
 function sendSearchResults(orderSearchResults){
     let orderSearchResultsForSend = [];
         breadTypesQty = [];
-        //builds and ipcrender send compatible array from query results
         for (let i = 0; i < orderSearchResults.length; i++) {
             breadTypesQty = [];
             const id = (orderSearchResults[i]._id).toString();
@@ -204,11 +203,6 @@ async function handleSearchOrdersBetweenDates (event, startDate, endDate) {
     }
 }
 
-
-
-
-
-// Updates bread type in database when bread type is edited 
 async function handleUpdateBreadType(event, updatedBreadTypeValues) {
     try {
         await breadTypes.updateOne({
@@ -227,7 +221,6 @@ async function handleUpdateBreadType(event, updatedBreadTypeValues) {
     }
 }
 
-//Saves order to orders database
 async function handleSaveEditedOrder (event, valuesForSave) {
     try {
         await order.updateOne(
@@ -246,24 +239,23 @@ async function handleSaveEditedOrder (event, valuesForSave) {
             } )
     
         win.webContents.send("request-order-search-results", "message");
-        update()
+        update();
     } catch (error) {
         console.log(error);
     }
 }
 
-// Deletes specified order in database
 async function handleDeleteOrder(event, orderValues) {
     try {
         await order.deleteOne({ _id: orderValues.id });
         win.webContents.send("request-order-search-results", "message");
+        update();
 
     } catch (error) {
         console.log(error);
     }
 }
 
-// updates unpaid orders list 
 async function updateUnpaidOrders() {
     try {
         const unpaidOrderValues = await order.find({ paid: false});
@@ -299,11 +291,86 @@ function handleUpdateUnpaidOrders(event) {
     updateUnpaidOrders();
 }
 
-// Updates order to paid status 
 async function handleUpdateOrderToPaid(event, id) {
     await order.updateOne({ _id: id }, { $set: { paid: true }});
     updateUnpaidOrders();
     update();
+}
+
+async function handleSaveCustomer(event, customerName, tradePriceFormula) {
+    const okStatus = customerName !== "" && tradePriceFormula !== 0;
+    const noNameStatus = customerName == "" && tradePriceFormula !== 0;
+    const noFormulaStatus = customerName !== "" && tradePriceFormula == 0;
+
+    if (okStatus){
+        try {
+            const customerForSave = new customer({name: customerName, tradePriceFormula: tradePriceFormula});
+            await customerForSave.save();
+            win.webContents.send("add-customer-status", "ok");
+            handleFetchCustomerData();
+            return
+        } catch (error) {
+            console.log(error);
+        }  
+    }
+    if (noNameStatus){
+        win.webContents.send("add-customer-status", "no-name");
+        return
+    }
+    if (noFormulaStatus){
+        win.webContents.send("add-customer-status", "no-formula");
+        return
+    }
+    win.webContents.send("add-customer-status", "empty");
+ 
+}
+
+async function handleFetchCustomerData(event) {
+    const customerData = await customer.find({});
+    
+    // Array needed to successfully send data to renderer process 
+    let customerDataForSend = [];
+    for (let i = 0; i < customerData.length; i++) {
+        const name = customerData[i].name;
+        const formula = customerData[i].tradePriceFormula;
+
+        customerDataForSend.push(
+            { 
+                name: name, 
+                tradePriceFormula: formula, 
+                id: customerData[i]._id.toString(), 
+            }
+        )
+    }
+    win.webContents.send("return-customer-data", customerDataForSend);
+}
+
+async function handleDeleteCustomer(event, customerId) {
+    try {
+         await customer.deleteOne({ _id: customerId });
+         handleFetchCustomerData();
+    } catch (error) {
+        console.log(error)
+    }
+       
+}
+
+async function handleUpdateCustomer(event, customerId, customerName, tradePriceFormula){
+    try {
+        await customer.updateOne(
+            { 
+                _id: customerId
+            },
+            {
+                $set: {
+                    name: customerName,
+                    tradePriceFormula: tradePriceFormula,    
+                }
+            } )
+        handleFetchCustomerData();
+    } catch (error) {
+       console.log(error) 
+    }
 }
 
 app.whenReady().then(() => {
@@ -320,6 +387,10 @@ app.whenReady().then(() => {
     ipcMain.on("delete-order", handleDeleteOrder);
     ipcMain.on("update-unpaid-orders", handleUpdateUnpaidOrders);
     ipcMain.on("update-order-to-paid", handleUpdateOrderToPaid);
+    ipcMain.on("save-customer", handleSaveCustomer);
+    ipcMain.on("fetchCustomerData", handleFetchCustomerData);
+    ipcMain.on("delete-customer", handleDeleteCustomer);
+    ipcMain.on("update-customer", handleUpdateCustomer);
     createWindow();
 
     app.on("activate", () => {

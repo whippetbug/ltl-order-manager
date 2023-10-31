@@ -22,4 +22,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     mongooseConnectionEstablished: (connection) => ipcRenderer.on("mongoose-connection-established", connection),
     updateOrderToPaid: (id) => ipcRenderer.send("update-order-to-paid", id),
     update: (message) => ipcRenderer.on("update", message),
+    saveCustomer: (customerName, tradePriceFormula) => ipcRenderer.send("save-customer", customerName, tradePriceFormula),
+    addCustomerStatus: (status) => ipcRenderer.on("add-customer-status", status),
+    fetchCustomerData: () => ipcRenderer.send("fetch-customer-data"),
+    returnCustomerData: (customerData) => ipcRenderer.on("return-customer-data", customerData),
+    deleteCustomer: (customerId) => ipcRenderer.send("delete-customer", customerId), 
+    updateCustomer: (customerId, customerName, tradePriceFormula) => {
+        ipcRenderer.send("update-customer", customerId, customerName, tradePriceFormula )
+    },
 });
