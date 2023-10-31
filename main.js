@@ -1,5 +1,5 @@
-require('dotenv').config();
 const {app, BrowserWindow, ipcMain } = require("electron");
+const urls = require("./urls.json");
 const path = require("path");
 const mongoose = require("mongoose");
 const breadTypes = require("./models/bread-types");
@@ -12,9 +12,9 @@ const createWindow = () => {
     win = new BrowserWindow({
         width: 1100,
         height: 700,
+        icon: path.join(__dirname, "icons/icon.png"),
         webPreferences: {
             preload: path.join(__dirname, "scripts/preload.js"),
-            devTools: !app.isPackaged,
         }
     });
 
@@ -45,7 +45,7 @@ const createWindow = () => {
 
     const mongooseConnect = async () => {
         try {
-            await mongoose.connect(process.env.DATABASE_URL);
+            await mongoose.connect(urls.database_url);
             fetchBreadTypes();
             handleUpdateUnpaidOrders();
             handleFetchCustomerData();
