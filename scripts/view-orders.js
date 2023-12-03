@@ -210,7 +210,7 @@ function updateOrderSearchResults(orderResults) {
         includedDates.sort(function(a, b){
             let dateA = new Date(a);
             let dateB = new Date(b);
-            return dateA - dateB;
+            return dateB - dateA;
         })
 
        
