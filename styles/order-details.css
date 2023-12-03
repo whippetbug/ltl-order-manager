@@ -1,0 +1,33 @@
+body {
+    padding: 15px 20px;
+    overflow: auto;
+}
+
+.order-details {
+    display: flex;
+    flex-direction: row;
+}
+
+.order-details-column {
+    display: block;
+}
+
+#static-details-list{
+    width: 30vw;
+    list-style-type: none;
+    padding-right: 20px;
+}
+
+#dynamic-details-list{
+    list-style-type: none;
+}
+
+.order-detail {
+    margin-bottom: 10px;
+
+}
+
+#dynamic-details {
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+}

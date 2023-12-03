@@ -27,9 +27,8 @@
     </div>
 
     <div class="tab-content flex-container" id="dashboard">
-        <div id="unpaid-orders-list">
-            <h3 class="underlined">Unpaid Orders</h3>
-        </div> 
+        <h3 class="underlined">Unpaid Orders</h3>
+        <div id="unpaid-orders-list"></div> 
     </div>
 
     <div class="tab-content display-inline" id="view-orders">
@@ -58,26 +57,25 @@
         <div id="table-container"></div>
         <div class="popup" id="order-edit-popup">
             <div class="container-for-vertical-centering">
-                <div class="popup-background">
-                    <div class="container-for-vertical-centering">
-                        <div class="popup-elements flex-container">
-                            <div class="container-left">
-                                <h3 class="underlined">Edit Order</h3>
-                                <label for="order-name-updated" class="input-box-label">Order Name</label>
-                                <input type="text" class="input-box" id="order-name-updated">
-                                <label for="order-date-updated" class="input-box-label">Order Date</label>
-                                <input type="date" class="input-box" id="order-date-updated">
-                                <label for="order-comments-updated" class="input-box-label">Comments</label>
-                                <textarea id="order-comments-updated" class="textarea input-box" cols="30" rows="4"></textarea>
-                                <label for="paid-updated">Paid</label>
-                                <input type="checkbox" id="paid-updated">
-                            </div>
-                            <div class="container-right">
-                                <div id="bread-types-qty-updated"></div>
-                                <button class="delete-button" id="delete-order-button">Delete</button>
-                                <button class="cancel-button" id="cancel-order-edit">Cancel</button>
-                                <button class="save-button button" id="save-order-edit-button">Save</button>
-                            </div>
+                <div class="popup-background flex-container" id="order-edit-popup-background">
+                    <div class="popup-elements flex-container">
+                        <div class="container-left">
+                            <h3 class="underlined">Edit Order</h3>
+                            <label for="order-name-updated" class="input-box-label">Order Name</label>
+                            <input type="text" class="input-box" id="order-name-updated">
+                            <label for="order-date-updated" class="input-box-label">Order Date</label>
+                            <input type="date" class="input-box" id="order-date-updated">
+                            <label for="order-comments-updated" class="input-box-label">Comments</label>
+                            <textarea id="order-comments-updated" class="textarea input-box" cols="30" rows="4"></textarea>
+                            <label for="paid-updated">Paid</label>
+                            <input type="checkbox" id="paid-updated">
+                            <br>
+                            <button class="delete-button" id="delete-order-button">Delete</button>
+                            <button class="cancel-button" id="cancel-order-edit">Cancel</button>
+                            <button class="save-button button" id="save-order-edit-button">Save</button>
+                        </div>
+                        <div class="container-right">
+                            <div id="bread-types-qty-updated"></div>
                         </div>
                     </div>
                 </div>
@@ -203,5 +201,6 @@
     <script src="./scripts/add-order.js"></script>
     <script src="./scripts/add-bread.js"></script>
     <script src="./scripts/add-customer.js"></script>
+    <script src="./scripts/dateFormat.js"></script>
 </body>
 </html>

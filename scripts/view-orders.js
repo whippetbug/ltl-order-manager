@@ -12,21 +12,6 @@ const nameSearchStartDate = document.getElementById("name-search-start-date");
 const nameSearchEndDate = document.getElementById("name-search-end-date");
 const orderName = document.getElementById("order-name");
 
-// converts date to format dd/mm/yyyy
-function formatDate(dateValue) { 
-    let date = new Date(dateValue);
-    const year = date.getFullYear();
-    let month = date.getMonth() + 1;
-    let day = date.getDate();
-    if (month < 10 ){
-        month = "0" + month;
-    }
-    if (day < 10 ){
-        day = "0" + day;
-    }
-    const formatedDate = `${day}/${month}/${year}`;
-    return formatedDate;
-}
 
 searchOrdersButton.addEventListener("click", () => searchOrders());
 
@@ -221,6 +206,13 @@ function updateOrderSearchResults(orderResults) {
                 includedDates.push((orderResults[i].orderDate).toISOString())
             }
         }
+
+        includedDates.sort(function(a, b){
+            let dateA = new Date(a);
+            let dateB = new Date(b);
+            return dateA - dateB;
+        })
+
        
         var table = document.createElement("table");
         table.id = "order-results-table";
@@ -281,6 +273,9 @@ function updateOrderSearchResults(orderResults) {
                     const nameLabel = document.createElement("label");
                     nameLabel.innerText = orderResults[i].orderName;
                     nameLabel.classList.add("name-label");
+                    nameLabel.onclick = () => {
+                        window.electronAPI.openOrderDetails(orderResults[i]);
+                    }
                     commentsContainer.appendChild(nameLabel);
                     
                     const commentsPopup = document.createElement("div");
