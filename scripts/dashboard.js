@@ -2,23 +2,15 @@ const standingOrderFields = document.getElementById("standing-order-fields");
 const paidCheckbox = document.getElementById("paid-checkbox");
 const unpaidOrdersTableContainer = document.getElementById("unpaid-orders-list");
 
-// converts date to format dd/mm/yyyy
-function formatDate(dateValue) { 
-    let date = new Date(dateValue);
-    const year = date.getFullYear();
-    let month = date.getMonth() + 1;
-    let day = date.getDate();
-    if (month < 10 ){
-        month = "0" + month;
-    }
-    if (day < 10 ){
-        day = "0" + day;
-    }
-    const formatedDate = `${day}/${month}/${year}`;
-    return formatedDate;
-}  
+window.electronAPI.receiveUnpaidOrders((event, unpaidOrdersValuesUnsorted) => {
+    let unpaidOrdersValues = unpaidOrdersValuesUnsorted;
 
-window.electronAPI.receiveUnpaidOrders((event, unpaidOrdersValues) => {
+    unpaidOrdersValues.sort(function(a, b) {
+        let dateA = new Date(a.orderDate);
+        let dateB = new Date(b.orderDate);
+        return dateB - dateA;
+    })
+
     const unpaidOrderValuesExist = unpaidOrdersValues.length > 0;
     const unpaidOrdersTableFromHtml = document.getElementById("unpaid-orders-table");
     const noUnpaidOrdersMessageFromHtml = document.getElementById("no-unpaid-orders-message");
@@ -69,6 +61,10 @@ window.electronAPI.receiveUnpaidOrders((event, unpaidOrdersValues) => {
 
             const nameTd = document.createElement("td");
             nameTd.innerText = unpaidOrdersValues[i].orderName;
+            nameTd.onclick = () => {
+                window.electronAPI.openOrderDetails(unpaidOrdersValues[i]);
+            }
+            nameTd.style.textDecoration = "underline";
             tr.appendChild(nameTd);
 
             const dateTd = document.createElement("td");

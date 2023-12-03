@@ -5,20 +5,22 @@ const mongoose = require("mongoose");
 const breadTypes = require("./models/bread-types");
 const order = require("./models/order");
 const customer = require("./models/customer");
+const { openOrderDetails } = require("./scripts/order-details.js")
 
-var fetchBreadTypes, win, breadTypesQty;
+var fetchBreadTypes, win;
 
 const createWindow = () => {
     win = new BrowserWindow({
         width: 1100,
         height: 700,
-        icon: path.join(__dirname, "icons/icon.png"),
+        icon: "icons/icon.png",
         webPreferences: {
             preload: path.join(__dirname, "scripts/preload.js"),
         }
     });
 
     win.loadFile("index.html").then(() => { mongooseConnect() });
+    exports.mainWindow = win;
 
     fetchBreadTypes  = async () => {
         
@@ -120,7 +122,7 @@ async function handleAddOrder (event, orderValuesSent) {
 // Arrray needed to send data to renderer process successfully 
 function sendSearchResults(orderSearchResults){
     let orderSearchResultsForSend = [];
-        breadTypesQty = [];
+        let breadTypesQty = [];
         for (let i = 0; i < orderSearchResults.length; i++) {
             breadTypesQty = [];
             const id = (orderSearchResults[i]._id).toString();
@@ -130,6 +132,13 @@ function sendSearchResults(orderSearchResults){
             const orderComments = orderSearchResults[i].orderComments;
             const paid = orderSearchResults[i].paid;
             const standingOrder = orderSearchResults[i].standingOrder;
+            let totalAmountDueRetail = 0;
+            let totalAmountDueTrade = 0;
+
+            for (let j = 0; j < orderSearchResults[i].breadTypesQty.length; j++) {
+                totalAmountDueRetail = totalAmountDueRetail + (orderSearchResults[i].breadTypesQty[j].retailPrice * orderSearchResults[i].breadTypesQty[j].quantity);
+                totalAmountDueTrade = totalAmountDueTrade + (orderSearchResults[i].breadTypesQty[j].tradePrice * orderSearchResults[i].breadTypesQty[j].quantity);
+            }
         
             for ( let j = 0; j < breadTypesQtyFetched.length; j++){
                 breadTypesQty.splice(j, 0, { 
@@ -145,6 +154,8 @@ function sendSearchResults(orderSearchResults){
                 orderDate: orderDate, 
                 orderName: orderName, 
                 breadTypesQty: breadTypesQty,
+                totalAmountDueRetail: totalAmountDueRetail,
+                totalAmountDueTrade: totalAmountDueTrade,
                 orderComments: orderComments,
                 paid: paid,
                 standingOrder: standingOrder,
@@ -260,22 +271,36 @@ async function updateUnpaidOrders() {
     try {
         const unpaidOrderValues = await order.find({ paid: false});
         let valuesForSend = [];
+        let breadTypesQty = [];
         
         for (let i = 0; i < unpaidOrderValues.length; i++ ) {
+            breadTypesQty = [];
             let totalAmountDueRetail = 0;
             let totalAmountDueTrade = 0;
+            let breadTypesQtyFetched = unpaidOrderValues[i].breadTypesQty;
 
             for (let j = 0; j < unpaidOrderValues[i].breadTypesQty.length; j++) {
                 totalAmountDueRetail = totalAmountDueRetail + (unpaidOrderValues[i].breadTypesQty[j].retailPrice * unpaidOrderValues[i].breadTypesQty[j].quantity);
                 totalAmountDueTrade = totalAmountDueTrade + (unpaidOrderValues[i].breadTypesQty[j].tradePrice * unpaidOrderValues[i].breadTypesQty[j].quantity);
             }
 
+            for ( let j = 0; j < breadTypesQtyFetched.length; j++){
+                breadTypesQty.splice(j, 0, { 
+                    name: breadTypesQtyFetched[j].name, 
+                    quantity: breadTypesQtyFetched[j].quantity,
+                    tradePrice: breadTypesQtyFetched[j].tradePrice,
+                    retailPrice: breadTypesQtyFetched[j].retailPrice,
+                });
+            }
+
             valuesForSend.push({ 
                 orderName: unpaidOrderValues[i].orderName, 
                 orderDate: unpaidOrderValues[i].orderDate,
+                breadTypesQty: breadTypesQty,
                 totalAmountDueRetail: totalAmountDueRetail,
                 totalAmountDueTrade: totalAmountDueTrade, 
                 paid: unpaidOrderValues[i].paid,
+                orderComments: unpaidOrderValues[i].orderComments,
                 id: (unpaidOrderValues[i]._id).toString(),
             })
         }
@@ -373,6 +398,10 @@ async function handleUpdateCustomer(event, customerId, customerName, tradePriceF
     }
 }
 
+function handleOpenOrderDetails(event, orderDetails){
+    openOrderDetails(orderDetails);
+}
+
 app.whenReady().then(() => {
     ipcMain.on("save-bread-type", handleSaveBreadType);
     ipcMain.on("delete-bread-type", handleDeleteBreadType);
@@ -391,6 +420,7 @@ app.whenReady().then(() => {
     ipcMain.on("fetchCustomerData", handleFetchCustomerData);
     ipcMain.on("delete-customer", handleDeleteCustomer);
     ipcMain.on("update-customer", handleUpdateCustomer);
+    ipcMain.on("open-order-details", handleOpenOrderDetails);
     createWindow();
 
     app.on("activate", () => {

@@ -140,6 +140,12 @@ table, th, td {
     text-align: center;
 }
 
+#unpaid-orders-list {
+    width: calc(50% - 15px);
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+}
+
 /* View Orders */
 .search-button {
     padding:5px;
@@ -159,6 +165,12 @@ table, th, td {
     margin-left: 3px;
     margin-bottom: 5px;
     margin-top: 23px;
+}
+
+#table-container {
+    width: 100%;
+    height: calc(100% - 100px);
+    overflow: auto;
 }
 
 #table-container th, td {
@@ -185,6 +197,8 @@ table, th, td {
 }
 
 #add-order-container-right {
+    height: calc(100vh - 60px);
+    overflow-y: auto;
     margin-left: 15px;
     margin-top: 26px;
 }

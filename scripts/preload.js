@@ -30,4 +30,5 @@ contextBridge.exposeInMainWorld("electronAPI", {
     updateCustomer: (customerId, customerName, tradePriceFormula) => {
         ipcRenderer.send("update-customer", customerId, customerName, tradePriceFormula )
     },
+    openOrderDetails: (orderDetails) => ipcRenderer.send("open-order-details", orderDetails),
 });

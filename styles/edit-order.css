@@ -1,4 +1,10 @@
 .container-right {
     margin-left: 10px;
-    margin-top: 26px;
+    /* margin-top: 26px; */
+    overflow-y: auto;
+    height: calc(80vh - 60px);
+}
+
+#order-edit-popup-background{
+    height: 80vh;
 }

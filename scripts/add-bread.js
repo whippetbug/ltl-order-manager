@@ -7,7 +7,7 @@ const breadNameUpdated = document.getElementById("bread-name-updated");
 const breadRetailPriceUpdated = document.getElementById("bread-retail-price-updated");
 const breadTypesQtyUpdated = document.getElementById("bread-types-qty-updated");
 
-var breadTypeForEdit
+var breadTypeForEdit, breadTypeQtyListItemsFetched;
 
 saveBreadTypeButton.addEventListener( "click", () => {
     const breadTypeName = document.getElementById("bread-type-name");
@@ -83,18 +83,21 @@ function updateBreadList(fetchedBreadTypes) {
         let breadTypeQtyListItem = document.createElement("li");
         breadTypeQtyListItem.classList.add("bread-type-list-item");
         breadTypesQtyInput.appendChild(breadTypeQtyListItem);
+
+        let breadTypeInputContainer = document.createElement("div");
+        breadTypeQtyListItem.appendChild(breadTypeInputContainer);
      
         let breadTypeQtyLabel = document.createElement("label");
         breadTypeQtyLabel.innerText = breadTypes[i].name;
         breadTypeQtyLabel.classList.add("input-box-label");
-        breadTypeQtyListItem.appendChild(breadTypeQtyLabel);
+        breadTypeInputContainer.appendChild(breadTypeQtyLabel);
 
         let breadTypeQtyInputBox = document.createElement("input");
         breadTypeQtyInputBox.classList.add("input-box");
         breadTypeQtyInputBox.type = "number";
         breadTypeQtyInputBox.id = `${breadTypes[i].name}-qty-input`;
         breadTypeQtyInputBox.placeholder = "Quantity";
-        breadTypeQtyListItem.appendChild(breadTypeQtyInputBox);
+        breadTypeInputContainer.appendChild(breadTypeQtyInputBox);
     }
     }
 
