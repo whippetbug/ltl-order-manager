@@ -177,7 +177,8 @@ async function handleSearchOrdersDate (event, date) {
 // Searches orders in database with specific name
 async function handleSearchOrdersName (event, name) {
     try {
-        const orderSearchResults = await order.find({ orderName: name});
+        const regExpName = new RegExp(name, "i");
+        const orderSearchResults = await order.find({ orderName: regExpName});
         sendSearchResults(orderSearchResults);
     } catch (error) {
         console.log(error);
@@ -187,7 +188,8 @@ async function handleSearchOrdersName (event, name) {
 // Searces orders in database with specific name on a certain date
 async function handleSearchOrdersName1Date (event, name, date) {
     try {
-        const orderSearchResults = await order.find({$and: [{orderName: name}, {orderDate: date}]});
+        const regExpName = new RegExp(name, "i");
+        const orderSearchResults = await order.find({$and: [{orderName: regExpName}, {orderDate: date}]});
         sendSearchResults(orderSearchResults);
     } catch (error) {
         console.log(error);
@@ -197,7 +199,8 @@ async function handleSearchOrdersName1Date (event, name, date) {
 // Searches orders in database with specific name between two dates 
 async function handleSearchOrdersName2Dates (event, name, startDate, endDate) {
     try {
-        const orderSearchResults = await order.find({ $and: [ {orderName: name}, {orderDate: {$gte: startDate, $lte: endDate}}]});
+        const regExpName = new RegExp(name, "i");
+        const orderSearchResults = await order.find({ $and: [ {orderName: regExpName}, {orderDate: {$gte: startDate, $lte: endDate}}]});
         sendSearchResults(orderSearchResults);
     } catch (error) {
         console.log(error);
