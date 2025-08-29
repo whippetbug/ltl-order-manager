@@ -24,10 +24,12 @@ module.exports = {
         }
       },
     },
-    {
-      name: '@electron-forge/maker-rpm',
-      config: {},
-    },
+
+    // Uncomment to allow rpm packages to be built
+    // {
+    //   name: '@electron-forge/maker-rpm',
+    //   config: {},
+    // },
     {
       name: '@electron-forge/maker-dmg',
       config: {
